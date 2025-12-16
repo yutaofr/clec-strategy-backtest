@@ -52,14 +52,34 @@ export const runBacktest = (
       continue;
     }
 
-    // 1. Banking Logic: Interest Accrual
+    // 1. Banking Logic: Interest Accrual & Debt Service
+    // NEW LOGIC: Interest is paid by Cash Yield + Principal first. Only capitalized if cash runs out.
     if (index > 0) {
-      // Interest on Cash Savings (Asset grows)
-      currentState.cashBalance *= (1 + monthlyCashYieldRate);
-      
-      // Interest on Debt (Liability grows)
+      // Step A: Accrue Interest on Cash (Gross up the cash pile)
+      const interestEarned = currentState.cashBalance * monthlyCashYieldRate;
+      currentState.cashBalance += interestEarned;
+
+      // Step B: Calculate Interest Due on Debt
+      let interestDue = 0;
       if (leverage.enabled && currentState.debtBalance > 0) {
-         currentState.debtBalance *= (1 + monthlyLoanRate);
+         interestDue = currentState.debtBalance * monthlyLoanRate;
+      }
+
+      // Step C: Service the Debt
+      if (interestDue > 0) {
+          if (currentState.cashBalance >= interestDue) {
+              // Scenario: Liquidity Sufficient
+              // Pay off interest completely using cash (yield + principal)
+              currentState.cashBalance -= interestDue;
+              // debtBalance remains unchanged (Interest is NOT rolled into debt)
+          } else {
+              // Scenario: Liquidity Crunch
+              // Use all available cash to pay what we can
+              const shortfall = interestDue - currentState.cashBalance;
+              currentState.cashBalance = 0;
+              // The unpaid interest (shortfall) is added to the principal (Capitalized)
+              currentState.debtBalance += shortfall;
+          }
       }
     }
 
