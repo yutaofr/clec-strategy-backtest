@@ -1,12 +1,15 @@
+
 import React, { useState } from 'react';
 import { AssetConfig, Profile, StrategyType } from '../types';
-import { Settings, DollarSign, PieChart, TrendingUp, Plus, Trash2, Edit2, ArrowLeft, Check, Coins, Percent, Landmark, Info, AlertOctagon } from 'lucide-react';
+import { Settings, DollarSign, PieChart, TrendingUp, Plus, Trash2, Edit2, ArrowLeft, Check, Coins, Percent, Landmark, Info, AlertOctagon, FileText } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
 
 interface ConfigPanelProps {
   profiles: Profile[];
   onProfilesChange: (profiles: Profile[]) => void;
   onRun: () => void;
+  onViewDetails: (profileId: string) => void;
+  hasResults: boolean;
 }
 
 // High-contrast palette for distinct chart lines
@@ -44,7 +47,7 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
   }
 };
 
-export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesChange, onRun }) => {
+export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesChange, onRun, onViewDetails, hasResults }) => {
   const { t } = useTranslation();
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
 
@@ -143,7 +146,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
          </div>
 
          <div className="space-y-6">
-            
             {/* Identity */}
             <div className="space-y-2">
                <label className="text-xs font-semibold text-slate-500 uppercase">{t('profileName')}</label>
@@ -368,7 +370,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                                 />
                              </div>
                              
-                             {/* Enhanced LTV / Maintenance Ratio Input */}
                              <div className="bg-white p-3 rounded-lg border border-yellow-200">
                                 <div className="flex justify-between items-center mb-1">
                                     <label className="text-[10px] text-yellow-700 uppercase font-bold flex items-center gap-1" title="If Debt > This % of Collateral, liquidation occurs">
@@ -499,12 +500,23 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: profile.color }}></span>
                     <span className="font-bold text-slate-800 text-sm">{profile.name}</span>
                  </div>
-                 <button 
-                   onClick={(e) => handleDeleteProfile(e, profile.id)}
-                   className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 text-slate-400 transition-opacity"
-                 >
-                    <Trash2 className="w-4 h-4" />
-                 </button>
+                 <div className="flex gap-1">
+                     {hasResults && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onViewDetails(profile.id); }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title={t('viewDetails')}
+                        >
+                            <FileText className="w-4 h-4" />
+                        </button>
+                     )}
+                     <button 
+                        onClick={(e) => handleDeleteProfile(e, profile.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                     >
+                        <Trash2 className="w-4 h-4" />
+                     </button>
+                 </div>
               </div>
               
               <div className="text-xs text-slate-500 mb-3">
@@ -527,7 +539,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                 )}
               </div>
               
-              <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-blue-500">
+              <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-blue-500 pointer-events-none">
                  <Edit2 className="w-4 h-4" />
               </div>
            </div>

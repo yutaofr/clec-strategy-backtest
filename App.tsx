@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { ResultsDashboard } from './components/ResultsDashboard';
+import { FinancialReportModal } from './components/FinancialReportModal';
 import { MARKET_DATA } from './constants';
 import { runBacktest } from './services/simulationEngine';
 import { getStrategyByType } from './services/strategies';
@@ -75,6 +77,9 @@ const MainApp = () => {
   const [results, setResults] = useState<SimulationResult[]>([]);
   const [isCalculated, setIsCalculated] = useState(false);
   
+  // Reporting Modal State
+  const [reportResult, setReportResult] = useState<SimulationResult | null>(null);
+  
   // Sidebar state
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
@@ -111,6 +116,16 @@ const MainApp = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleViewDetails = (profileId: string) => {
+      if (!isCalculated) return;
+      // We need to map the profile ID to the result index.
+      // Since results map 1:1 to profiles array order:
+      const index = profiles.findIndex(p => p.id === profileId);
+      if (index >= 0 && results[index]) {
+          setReportResult(results[index]);
+      }
+  };
+
   const LangButton = ({ code, label }: { code: Language, label: string }) => (
     <button 
       onClick={() => setLanguage(code)}
@@ -123,6 +138,14 @@ const MainApp = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans text-slate-900 relative overflow-x-hidden">
       
+      {/* Financial Report Modal */}
+      {reportResult && (
+          <FinancialReportModal 
+             result={reportResult} 
+             onClose={() => setReportResult(null)} 
+          />
+      )}
+
       {/* Mobile/Tablet Portrait Header (< 1024px) */}
       <div className="lg:hidden bg-white p-4 border-b border-slate-200 sticky top-0 z-40 flex flex-col gap-3 shadow-sm">
          <div className="flex items-center justify-between">
@@ -209,7 +232,13 @@ const MainApp = () => {
          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-8">
              {/* Wrapper to ensure width stability during transitions */}
              <div className="min-w-[18rem]">
-                 <ConfigPanel profiles={profiles} onProfilesChange={setProfiles} onRun={handleRunSimulation} />
+                 <ConfigPanel 
+                    profiles={profiles} 
+                    onProfilesChange={setProfiles} 
+                    onRun={handleRunSimulation}
+                    onViewDetails={handleViewDetails}
+                    hasResults={isCalculated}
+                 />
                  
                  <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">
                     <p>{t('dataRange')}: 2000 - 2025</p>

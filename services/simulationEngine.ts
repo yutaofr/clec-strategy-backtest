@@ -1,4 +1,5 @@
-import { AssetConfig, MarketDataRow, PortfolioState, SimulationResult, StrategyFunction } from "../types";
+
+import { AssetConfig, MarketDataRow, PortfolioState, SimulationResult, StrategyFunction, FinancialEvent } from "../types";
 import { calculateCAGR, calculateIRR, calculateMaxDrawdown, calculateSharpeRatio } from "./financeMath";
 
 export const runBacktest = (
@@ -18,13 +19,13 @@ export const runBacktest = (
     debtBalance: 0,
     totalValue: 0,
     strategyMemory: {},
-    ltv: 0
+    ltv: 0,
+    events: []
   };
 
   const monthlyCashYieldRate = Math.pow(1 + config.cashYieldAnnual / 100, 1 / 12) - 1;
   
   // Debt settings
-  // Default ratios: QQQ 0.7, QLD 0.0, Cash 0.95 if not defined.
   const leverage = {
       ...config.leverage,
       qqqPledgeRatio: config.leverage?.qqqPledgeRatio ?? 0.7,
@@ -39,25 +40,36 @@ export const runBacktest = (
 
   for (let index = 0; index < marketData.length; index++) {
     const dataRow = marketData[index];
+    const monthEvents: FinancialEvent[] = [];
 
     if (isBankrupt) {
-      // If bankrupt, portfolio stays at 0
       history.push({
         ...currentState,
         date: dataRow.date,
         totalValue: 0,
         shares: { ...currentState.shares },
-        ltv: 0 // Irrelevant once bankrupt
+        ltv: 0,
+        events: [{ type: 'INFO', description: 'Account Bankrupt' }]
       });
       continue;
     }
 
+    // Capture state before banking/strategy logic to detect changes
+    const preStrategyCash = currentState.cashBalance;
+    const preStrategyShares = { ...currentState.shares };
+
     // 1. Banking Logic: Interest Accrual & Debt Service
-    // NEW LOGIC: Interest is paid by Cash Yield + Principal first. Only capitalized if cash runs out.
     if (index > 0) {
-      // Step A: Accrue Interest on Cash (Gross up the cash pile)
+      // Step A: Accrue Interest on Cash
       const interestEarned = currentState.cashBalance * monthlyCashYieldRate;
-      currentState.cashBalance += interestEarned;
+      if (interestEarned > 0.01) {
+          currentState.cashBalance += interestEarned;
+          monthEvents.push({ 
+              type: 'INTEREST_INC', 
+              amount: interestEarned, 
+              description: `Cash Interest (+${(config.cashYieldAnnual / 12).toFixed(2)}%)` 
+          });
+      }
 
       // Step B: Calculate Interest Due on Debt
       let interestDue = 0;
@@ -69,94 +81,152 @@ export const runBacktest = (
       if (interestDue > 0) {
           if (currentState.cashBalance >= interestDue) {
               // Scenario: Liquidity Sufficient
-              // Pay off interest completely using cash (yield + principal)
               currentState.cashBalance -= interestDue;
-              // debtBalance remains unchanged (Interest is NOT rolled into debt)
+              monthEvents.push({ 
+                  type: 'INTEREST_EXP', 
+                  amount: -interestDue, 
+                  description: `Loan Interest Paid by Cash` 
+              });
           } else {
               // Scenario: Liquidity Crunch
-              // Use all available cash to pay what we can
+              const paidByCash = currentState.cashBalance;
               const shortfall = interestDue - currentState.cashBalance;
+              
+              if (paidByCash > 0) {
+                  monthEvents.push({ 
+                      type: 'INTEREST_EXP', 
+                      amount: -paidByCash, 
+                      description: `Loan Interest Paid by Cash (Partial)` 
+                  });
+              }
+              
               currentState.cashBalance = 0;
-              // The unpaid interest (shortfall) is added to the principal (Capitalized)
               currentState.debtBalance += shortfall;
+              monthEvents.push({ 
+                  type: 'DEBT_INC', 
+                  amount: shortfall, 
+                  description: `Unpaid Interest Capitalized to Debt` 
+              });
           }
       }
     }
 
-    // 2. Execute Investment Strategy (Trading / Rebalancing)
-    // This updates shares and cashBalance based on strategy (DCA, Rebalance, etc.)
+    // 2. Execute Investment Strategy
+    // Capture "Deposits" implicitly by checking if cash increased mysteriously before trading?
+    // Actually, strategies usually add cash then buy.
+    // Let's rely on diffing shares/cash after strategy execution.
+    
+    // NOTE: Strategies in this system handle the "Deposit" logic internally (adding to cash or buying shares directly).
+    // We need to pass the state. To detect "Deposit", we check if the strategy added money.
+    // However, since strategyFunc is a black box, let's assume standard DCA adds logic.
+    // We can infer deposit if NetWorth jumped significantly without market move? Hard.
+    // Better: Detect trade deltas.
+
+    // Snapshot before strategy
+    const cashBeforeStrat = currentState.cashBalance;
+    const sharesBeforeStrat = { ...currentState.shares };
+
     currentState = strategyFunc(currentState, dataRow, config, index);
+
+    // Detect Trades
+    const qqqDiff = currentState.shares.QQQ - sharesBeforeStrat.QQQ;
+    const qldDiff = currentState.shares.QLD - sharesBeforeStrat.QLD;
+    
+    // Estimate cost based on current price
+    if (Math.abs(qqqDiff) > 0.001) {
+        const cost = qqqDiff * dataRow.qqq;
+        monthEvents.push({
+            type: 'TRADE',
+            amount: -cost,
+            description: `${qqqDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qqqDiff).toFixed(2)} QQQ @ ${dataRow.qqq.toFixed(2)}`
+        });
+    }
+    if (Math.abs(qldDiff) > 0.001) {
+        const cost = qldDiff * dataRow.qld;
+        monthEvents.push({
+            type: 'TRADE',
+            amount: -cost,
+            description: `${qldDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qldDiff).toFixed(2)} QLD @ ${dataRow.qld.toFixed(2)}`
+        });
+    }
+    
+    // Detect DCA Deposit (Approximation: If we bought shares but cash didn't drop by full amount, or cash increased)
+    // Net flow = (Cash_End - Cash_Start) + Cost_Of_Buys
+    // If Net flow > 0, that's external deposit.
+    const netTradeCost = (qqqDiff * dataRow.qqq) + (qldDiff * dataRow.qld);
+    const impliedCashFlow = (currentState.cashBalance - cashBeforeStrat) + netTradeCost;
+    
+    // Small epsilon for float errors
+    if (impliedCashFlow > 1.0) {
+        monthEvents.push({
+            type: 'DEPOSIT',
+            amount: impliedCashFlow,
+            description: 'Recurring Contribution / Deposit'
+        });
+    }
 
     // 3. Leverage / Pledging Logic (Borrowing & Risk Check)
     if (leverage.enabled) {
        const currentMonth = parseInt(dataRow.date.substring(5, 7)) - 1;
        
-       // Calculate Asset Values
        const qqqValue = currentState.shares.QQQ * dataRow.qqq;
        const qldValue = currentState.shares.QLD * dataRow.qld;
        const cashValue = currentState.cashBalance;
-       
-       // STRATEGY: Total Asset Withdrawal Base
-       // "Annual Cash Out" is calculated based on TOTAL Net Worth/Assets (including QLD), 
-       // representing the user's lifestyle cost relative to their wealth.
        const totalAssetValue = qqqValue + qldValue + cashValue;
        
-       // RISK MANAGEMENT: Collateral Calculation
-       // Effective Collateral = Sum of (AssetValue * PledgeRatio)
-       // Now includes QLD if qldPledgeRatio > 0
        const effectiveCollateral = 
           (qqqValue * leverage.qqqPledgeRatio) + 
           (cashValue * leverage.cashPledgeRatio) +
           (qldValue * leverage.qldPledgeRatio);
 
        // Annual Withdrawal Logic (in January)
-       // We only withdraw if we are not already underwater on collateral
        if (currentMonth === 0 && index > 0 && effectiveCollateral > 0) {
            let borrowAmount = 0;
-           
            if (leverage.withdrawType === 'PERCENT') {
-               // Withdraw % of TOTAL Portfolio Assets
                borrowAmount = totalAssetValue * (leverage.withdrawValue / 100);
            } else {
                borrowAmount = leverage.withdrawValue;
            }
            
-           // CRITICAL LOGIC CONFIRMATION:
-           // 1. Debt INCREASES by borrowAmount.
-           // 2. Cash DOES NOT INCREASE. The money is withdrawn from the broker to a personal bank account and spent.
-           // Result: Net Equity decreases by borrowAmount.
-           currentState.debtBalance += borrowAmount;
+           if (borrowAmount > 0) {
+               currentState.debtBalance += borrowAmount;
+               monthEvents.push({
+                   type: 'WITHDRAW',
+                   amount: -borrowAmount,
+                   description: `Annual Living Expense Withdrawal`
+               });
+               monthEvents.push({
+                   type: 'DEBT_INC',
+                   amount: borrowAmount,
+                   description: `Borrowing increased for withdrawal`
+               });
+           }
        }
 
-       // Solvency / Bankruptcy Check
-       // LTV = Debt / EffectiveCollateral.
-       // If Debt > EffectiveCollateral, the broker liquidates (LTV > 100% of Pledged Value).
+       // Solvency Check
        if (effectiveCollateral > 0) {
           currentState.ltv = (currentState.debtBalance / effectiveCollateral) * 100;
        } else {
-          // If debt exists but no collateral (e.g. 100% QLD and ratio is 0), instant bankruptcy
           currentState.ltv = currentState.debtBalance > 0 ? 9999 : 0;
        }
 
-       // Trigger Bankruptcy if Debt exceeds the safety limit (maxLtv) of the Collateral
-       // Example: maxLtv is 100%. If Debt > Collateral Value, game over.
        if (currentState.ltv > leverage.maxLtv) {
           isBankrupt = true;
           bankruptcyDate = dataRow.date;
-          // Zero out value to represent total liquidation
           currentState.totalValue = 0;
+          monthEvents.push({
+              type: 'INFO',
+              description: `!!! MARGIN CALL / LIQUIDATION (LTV: ${currentState.ltv.toFixed(1)}%) !!!`
+          });
        }
     }
 
     // 4. Update Net Value
     if (!isBankrupt) {
-        // Total Assets
         const assets = 
             (currentState.shares.QQQ * dataRow.qqq) +
             (currentState.shares.QLD * dataRow.qld) +
             currentState.cashBalance;
-        
-        // Net Equity = Assets - Debt
         currentState.totalValue = Math.max(0, assets - currentState.debtBalance);
     }
 
@@ -164,7 +234,8 @@ export const runBacktest = (
     history.push({
       ...currentState,
       shares: { ...currentState.shares },
-      strategyMemory: { ...currentState.strategyMemory }
+      strategyMemory: { ...currentState.strategyMemory },
+      events: monthEvents // Store the logs
     });
   }
 

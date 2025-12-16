@@ -1,3 +1,4 @@
+
 // Domain Models
 
 export interface MarketDataRow {
@@ -48,6 +49,12 @@ export interface Profile {
   config: AssetConfig;
 }
 
+export interface FinancialEvent {
+  type: 'INTEREST_INC' | 'INTEREST_EXP' | 'DEBT_INC' | 'TRADE' | 'DEPOSIT' | 'WITHDRAW' | 'INFO';
+  amount?: number;
+  description: string;
+}
+
 export interface PortfolioState {
   date: string;
   shares: {
@@ -61,6 +68,9 @@ export interface PortfolioState {
   // Metadata for complex strategies (e.g., Smart Adjust)
   strategyMemory: Record<string, any>;
   ltv: number; // Loan to Value ratio for this step
+  
+  // New: Detailed logs for accounting reports
+  events: FinancialEvent[];
 }
 
 export interface SimulationResult {
