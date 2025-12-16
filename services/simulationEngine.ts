@@ -112,12 +112,6 @@ export const runBacktest = (
     // Actually, strategies usually add cash then buy.
     // Let's rely on diffing shares/cash after strategy execution.
     
-    // NOTE: Strategies in this system handle the "Deposit" logic internally (adding to cash or buying shares directly).
-    // We need to pass the state. To detect "Deposit", we check if the strategy added money.
-    // However, since strategyFunc is a black box, let's assume standard DCA adds logic.
-    // We can infer deposit if NetWorth jumped significantly without market move? Hard.
-    // Better: Detect trade deltas.
-
     // Snapshot before strategy
     const cashBeforeStrat = currentState.cashBalance;
     const sharesBeforeStrat = { ...currentState.shares };
@@ -175,8 +169,11 @@ export const runBacktest = (
           (cashValue * leverage.cashPledgeRatio) +
           (qldValue * leverage.qldPledgeRatio);
 
-       // Annual Withdrawal Logic (in January)
-       if (currentMonth === 0 && index > 0 && effectiveCollateral > 0) {
+       // Withdrawal Logic: Trigger on the very first month (Index 0) OR every January
+       // Previously: if (currentMonth === 0 && index > 0 && effectiveCollateral > 0)
+       const isWithdrawalTiming = index === 0 || currentMonth === 0;
+
+       if (isWithdrawalTiming && effectiveCollateral > 0) {
            let borrowAmount = 0;
            if (leverage.withdrawType === 'PERCENT') {
                borrowAmount = totalAssetValue * (leverage.withdrawValue / 100);
@@ -189,7 +186,7 @@ export const runBacktest = (
                monthEvents.push({
                    type: 'WITHDRAW',
                    amount: -borrowAmount,
-                   description: `Annual Living Expense Withdrawal`
+                   description: index === 0 ? `Initial Loan Withdrawal` : `Annual Living Expense Withdrawal`
                });
                monthEvents.push({
                    type: 'DEBT_INC',
