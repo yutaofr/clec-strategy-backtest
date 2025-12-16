@@ -170,6 +170,7 @@ export const runBacktest = (
   return {
     strategyName,
     color,
+    isLeveraged: config.leverage.enabled,
     history,
     isBankrupt,
     bankruptcyDate,

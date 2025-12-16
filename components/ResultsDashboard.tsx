@@ -1,7 +1,7 @@
 import React from 'react';
 import { SimulationResult } from '../types';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
-import { TrendingDown, Percent, DollarSign, Activity, Trophy, AlertTriangle } from 'lucide-react';
+import { TrendingDown, Percent, DollarSign, Activity, Trophy, AlertTriangle, Scale } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
 
 interface ResultsDashboardProps {
@@ -45,7 +45,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
             <span>{p.name}:</span>
             <span className="font-mono font-bold">
-                {typeof p.value === 'number' && p.name.includes('%') ? `${Number(p.value).toFixed(1)}%` : `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                {typeof p.value === 'number' && (p.name.includes('%') || p.name.includes('LTV')) ? `${Number(p.value).toFixed(1)}%` : `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </span>
           </div>
         ))}
@@ -97,6 +97,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       (drawdownData[idx] as any)[res.strategyName] = dd;
     });
   });
+
+  // Prepare LTV Data (Only for leveraged profiles)
+  const leveragedProfiles = results.filter(r => r.isLeveraged);
+  let ltvData: any[] = [];
+  if (leveragedProfiles.length > 0) {
+     ltvData = results[0].history.map((h) => ({ date: h.date }));
+     leveragedProfiles.forEach(res => {
+        res.history.forEach((h, idx) => {
+            (ltvData[idx] as any)[res.strategyName] = h.ltv;
+        });
+     });
+  }
 
   // Prepare Cash Data for ALL profiles that have cash usage
   const cashCharts = results.map(res => {
@@ -220,6 +232,41 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* LTV Chart - Only visible if leverage is used */}
+      {leveragedProfiles.length > 0 && (
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+                 <h3 className="text-lg font-bold text-slate-800">{t('ltvChartTitle')}</h3>
+                 <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded font-bold border border-yellow-200 flex items-center gap-1">
+                     <Scale className="w-3 h-3"/> Leveraged
+                 </span>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">{t('ltvChartDesc')}</p>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={ltvData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{fontSize: 12}} tickFormatter={(val) => val.substring(0,4)} stroke="#94a3b8" />
+                  <YAxis tick={{fontSize: 12}} stroke="#94a3b8" unit="%" domain={[0, 'auto']} allowDataOverflow={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  {leveragedProfiles.map((res) => (
+                    <Line 
+                      key={res.strategyName}
+                      type="monotone" 
+                      dataKey={res.strategyName} 
+                      stroke={res.color} 
+                      strokeWidth={2}
+                      dot={false}
+                      name={`${res.strategyName} LTV`}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+      )}
 
       {/* Cash Exposure Grid */}
       {cashCharts.length > 0 && (
