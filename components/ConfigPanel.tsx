@@ -36,6 +36,7 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
     enabled: false,
     interestRate: 5.0,
     qqqPledgeRatio: 0.7,
+    qldPledgeRatio: 0.0, // Default 0% pledge for leveraged ETF
     cashPledgeRatio: 0.95,
     maxLtv: 100.0,
     withdrawType: 'PERCENT',
@@ -387,12 +388,14 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                                 />
                             </div>
                             <div className="col-span-2">
-                                <label className="text-[10px] text-slate-400 uppercase font-bold">Pledge Ratio QLD (2x Leverage)</label>
+                                <label className="text-[10px] text-yellow-800 uppercase font-bold">{t('pledgeRatioQLD')}</label>
                                 <input
                                     type="number"
-                                    disabled
-                                    value="0.0"
-                                    className="w-full px-2 py-1.5 border border-slate-100 bg-slate-50 text-slate-400 rounded outline-none text-sm cursor-not-allowed"
+                                    step="0.05"
+                                    min="0" max="1"
+                                    value={profile.config.leverage.qldPledgeRatio ?? 0.0}
+                                    onChange={(e) => updateLeverage(profile.id, { qldPledgeRatio: Number(e.target.value) })}
+                                    className="w-full px-2 py-1.5 border border-yellow-200 rounded outline-none text-sm text-yellow-900 bg-white focus:bg-white"
                                 />
                             </div>
                         </div>

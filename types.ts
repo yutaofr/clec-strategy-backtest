@@ -11,6 +11,7 @@ export interface LeverageConfig {
   interestRate: number; // Annual interest rate for the loan
   // Pledge Ratios (0.0 - 1.0)
   qqqPledgeRatio: number; // e.g., 0.70
+  qldPledgeRatio: number; // e.g., 0.10 (New: Allow QLD as collateral)
   cashPledgeRatio: number; // e.g., 0.95
   maxLtv: number; // User's safety stop (Liquidation usually happens at 100% of Pledged Collateral)
   withdrawType: 'PERCENT' | 'FIXED';

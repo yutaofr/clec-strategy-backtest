@@ -24,10 +24,11 @@ export const runBacktest = (
   const monthlyCashYieldRate = Math.pow(1 + config.cashYieldAnnual / 100, 1 / 12) - 1;
   
   // Debt settings
-  // Default ratios: QQQ 0.7 (70%), Cash 0.95 (95%) if not defined. QLD is 0.
+  // Default ratios: QQQ 0.7, QLD 0.0, Cash 0.95 if not defined.
   const leverage = {
       ...config.leverage,
       qqqPledgeRatio: config.leverage?.qqqPledgeRatio ?? 0.7,
+      qldPledgeRatio: config.leverage?.qldPledgeRatio ?? 0.0,
       cashPledgeRatio: config.leverage?.cashPledgeRatio ?? 0.95
   };
   
@@ -80,10 +81,13 @@ export const runBacktest = (
        // representing the user's lifestyle cost relative to their wealth.
        const totalAssetValue = qqqValue + qldValue + cashValue;
        
-       // RISK MANAGEMENT: Quality Asset Pledge Only
-       // Effective Collateral = (QQQ * Ratio) + (Cash * Ratio). 
-       // CRITICAL: QLD is EXCLUDED (Ratio 0.0) from collateral due to high volatility.
-       const effectiveCollateral = (qqqValue * leverage.qqqPledgeRatio) + (cashValue * leverage.cashPledgeRatio);
+       // RISK MANAGEMENT: Collateral Calculation
+       // Effective Collateral = Sum of (AssetValue * PledgeRatio)
+       // Now includes QLD if qldPledgeRatio > 0
+       const effectiveCollateral = 
+          (qqqValue * leverage.qqqPledgeRatio) + 
+          (cashValue * leverage.cashPledgeRatio) +
+          (qldValue * leverage.qldPledgeRatio);
 
        // Annual Withdrawal Logic (in January)
        // We only withdraw if we are not already underwater on collateral
@@ -107,11 +111,10 @@ export const runBacktest = (
        // Solvency / Bankruptcy Check
        // LTV = Debt / EffectiveCollateral.
        // If Debt > EffectiveCollateral, the broker liquidates (LTV > 100% of Pledged Value).
-       // Note: effectiveCollateral can be 0 if user holds only QLD. In that case, any debt triggers bankruptcy.
        if (effectiveCollateral > 0) {
           currentState.ltv = (currentState.debtBalance / effectiveCollateral) * 100;
        } else {
-          // If debt exists but no collateral (e.g. 100% QLD), instant bankruptcy
+          // If debt exists but no collateral (e.g. 100% QLD and ratio is 0), instant bankruptcy
           currentState.ltv = currentState.debtBalance > 0 ? 9999 : 0;
        }
 

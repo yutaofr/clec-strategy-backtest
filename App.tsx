@@ -22,6 +22,7 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     enabled: false,
     interestRate: 5.0,
     qqqPledgeRatio: 0.7,
+    qldPledgeRatio: 0.0,
     cashPledgeRatio: 0.95,
     maxLtv: 100, // Default 100% of PLEDGED value (Broker Limit)
     withdrawType: 'PERCENT',
@@ -43,6 +44,7 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     enabled: false,
     interestRate: 5.0,
     qqqPledgeRatio: 0.7,
+    qldPledgeRatio: 0.0,
     cashPledgeRatio: 0.95,
     maxLtv: 100,
     withdrawType: 'PERCENT',
