@@ -511,8 +511,15 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                         </button>
                      )}
                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingProfileId(profile.id); }}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title={t('editProfile')}
+                     >
+                        <Edit2 className="w-4 h-4" />
+                     </button>
+                     <button 
                         onClick={(e) => handleDeleteProfile(e, profile.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
                      >
                         <Trash2 className="w-4 h-4" />
                      </button>
@@ -537,10 +544,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                        </span>
                     </div>
                 )}
-              </div>
-              
-              <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-blue-500 pointer-events-none">
-                 <Edit2 className="w-4 h-4" />
               </div>
            </div>
         ))}

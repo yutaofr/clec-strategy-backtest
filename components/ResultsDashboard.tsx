@@ -1,8 +1,10 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { SimulationResult } from '../types';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
-import { TrendingDown, Percent, DollarSign, Activity, Trophy, AlertTriangle, Scale } from 'lucide-react';
+import { TrendingDown, Percent, DollarSign, Activity, Trophy, AlertTriangle, Scale, HelpCircle } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
+import { MathModelModal } from './MathModelModal';
 
 interface ResultsDashboardProps {
   results: SimulationResult[];
@@ -57,6 +59,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) => {
   const { t } = useTranslation();
+  const [showMath, setShowMath] = useState(false);
 
   if (results.length === 0) return null;
 
@@ -128,6 +131,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
   return (
     <div className="space-y-8">
       
+      {showMath && <MathModelModal onClose={() => setShowMath(false)} />}
+
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard 
@@ -302,8 +307,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
       {/* Performance Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-         <div className="p-4 border-b border-slate-100 bg-slate-50">
+         <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
            <h3 className="font-bold text-slate-800">{t('perfComparison')}</h3>
+           <button 
+             onClick={() => setShowMath(true)} 
+             className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-full transition-colors"
+             title={t('math_title')}
+           >
+             <HelpCircle className="w-4 h-4" />
+           </button>
          </div>
          <div className="overflow-x-auto">
            <table className="w-full text-sm text-left">
