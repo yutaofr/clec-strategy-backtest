@@ -112,7 +112,9 @@ const dictionaries: Record<Language, Translations> = {
     // Misc
     done: "Done",
     dataRange: "Data Range",
-    appDesc: "Simulates various QQQ (Nasdaq 100) and QLD (2x Leverage) strategies. Create multiple profiles to compare different allocations and patrimony strategies."
+    appDesc: "Simulates various QQQ (Nasdaq 100) and QLD (2x Leverage) strategies. Create multiple profiles to compare different allocations and patrimony strategies.",
+    exportData: "Export All",
+    importData: "Import All"
   },
   fr: {
     appTitle: "Backtesteur QQQ",
@@ -215,7 +217,9 @@ const dictionaries: Record<Language, Translations> = {
     math_sharpe_formula: "Sharpe = (Rp - Rf) / σp",
     done: "Terminé",
     dataRange: "Plage de données",
-    appDesc: "Simule diverses stratégies QQQ (Nasdaq 100) et QLD (Levier 2x). Créez plusieurs profils pour comparer différentes allocations."
+    appDesc: "Simule diverses stratégies QQQ (Nasdaq 100) et QLD (Levier 2x). Créez plusieurs profils pour comparer différentes allocations.",
+    exportData: "Exporter tout",
+    importData: "Importer tout"
   },
   'zh-CN': {
     appTitle: "QQQ 回测工具",
@@ -318,7 +322,9 @@ const dictionaries: Record<Language, Translations> = {
     math_sharpe_formula: "Sharpe = (平均回报率 - 无风险利率) / 回报率标准差",
     done: "完成",
     dataRange: "数据范围",
-    appDesc: "模拟 QQQ (纳斯达克100) 和 QLD (2倍杠杆) 的多种投资策略。创建多个方案以对比不同的资产配置和现金管理逻辑。"
+    appDesc: "模拟 QQQ (纳斯达克100) 和 QLD (2倍杠杆) 的多种投资策略。创建多个方案以对比不同的资产配置和现金管理逻辑。",
+    exportData: "导出配置",
+    importData: "导入配置"
   },
   'zh-TW': {
     appTitle: "QQQ 回測工具",
@@ -421,7 +427,9 @@ const dictionaries: Record<Language, Translations> = {
     math_sharpe_formula: "Sharpe = (平均回報率 - 無風險利率) / 回報率標準差",
     done: "完成",
     dataRange: "數據範圍",
-    appDesc: "模擬 QQQ (納斯達克100) 和 QLD (2倍槓桿) 的多種投資策略。創建多個方案以對比不同的資產配置和現金管理邏輯。"
+    appDesc: "模擬 QQQ (納斯達克100) 和 QLD (2倍槓桿) 的多種投資策略。創建多個方案以對比不同的資產配置和現金管理邏輯。",
+    exportData: "匯出配置",
+    importData: "匯入配置"
   }
 };
 

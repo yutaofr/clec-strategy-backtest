@@ -1,0 +1,24 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Production-like container for testing
+  prod-test:
+    build:
+      context: .
+      target: build
+    image: qqq-qld-backtester:latest
+    ports:
+      - "3000:80"
