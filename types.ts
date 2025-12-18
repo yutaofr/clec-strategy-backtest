@@ -24,11 +24,11 @@ export interface AssetConfig {
   initialCapital: number;
   contributionAmount: number; // Amount per period
   contributionIntervalMonths: number; // 1 = Monthly, 3 = Quarterly, 12 = Yearly
-  
+
   // Initial / Target Portfolio Allocation
   qqqWeight: number; // 0-100
   qldWeight: number; // 0-100
-  
+
   // Recurring Contribution Allocation
   contributionQqqWeight: number; // 0-100
   contributionQldWeight: number; // 0-100
@@ -65,12 +65,12 @@ export interface PortfolioState {
   cashBalance: number;
   debtBalance: number; // New: Track margin loan balance
   totalValue: number; // Net Equity (Assets - Debt)
-  
+
   // Metadata for complex strategies (e.g., Smart Adjust)
   strategyMemory: Record<string, any>;
   ltv: number; // Loan to Value ratio for this step
   beta: number; // Portfolio Beta relative to QQQ
-  
+
   // New: Detailed logs for accounting reports
   events: FinancialEvent[];
 }
@@ -88,6 +88,12 @@ export interface SimulationResult {
     maxDrawdown: number;
     sharpeRatio: number;
     irr: number;
+    realFinalBalance: number;
+    worstYearReturn: number;
+    maxRecoveryMonths: number;
+    calmarRatio: number;
+    painIndex: number;
+    inflationRate: number;
   };
 }
 
