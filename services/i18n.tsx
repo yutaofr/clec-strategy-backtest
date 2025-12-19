@@ -574,7 +574,14 @@ const dictionaries: Record<Language, Translations> = {
     dataRange: "數據範圍",
     appDesc: "模擬 QQQ (納斯達克100) 和 QLD (2倍槓桿) 的多種投資策略。創建多個方案以對比不同的資產配置和現金管理邏輯。",
     exportData: "匯出配置",
-    importData: "匯入配置"
+    importData: "匯入配置",
+    downloadReport: "下載專業報告 (PDF)",
+    reportGeneratedBy: "由策略回測系統產生",
+    strategyAnalysis: "投資策略績效分析報告",
+    executiveSummary: "核心績效摘要",
+    visualAnalysis: "圖表視覺化分析",
+    aiAnalysisNote: "AI 分析專用 segment：以下數據已為 AI 解析進行結構化處理。",
+    legalDisclaimer: "風險提示：本報告僅供模擬參考，過往業績不代表未來表現。投資有風險，入市需謹慎。"
   }
 };
 
