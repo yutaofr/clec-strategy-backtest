@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { SimulationResult } from '../types';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, BarChart, Bar } from 'recharts';
-import { TrendingUp, Percent, Activity, Trophy, AlertTriangle, Scale, HelpCircle, Zap, ShieldAlert, Calendar, Clock, ChevronUp, ChevronDown, ArrowUpDown, FileDown } from 'lucide-react';
+import { TrendingUp, Percent, Activity, Trophy, AlertTriangle, Scale, HelpCircle, Zap, ShieldAlert, Clock, ChevronUp, ChevronDown, ArrowUpDown, FileDown } from 'lucide-react';
 import { useTranslation } from '../services/i18n';
 import { MathModelModal } from './MathModelModal';
 import { generateProfessionalReport } from '../services/reportService';
@@ -141,11 +141,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
   // Calculate winners for each primary metric (using safeResults to prefer non-bankrupt)
   const bestBalance = [...safeResults].sort((a, b) => b.metrics.finalBalance - a.metrics.finalBalance)[0];
+  const bestCAGR = [...safeResults].sort((a, b) => b.metrics.cagr - a.metrics.cagr)[0];
   const bestIRR = [...safeResults].sort((a, b) => b.metrics.irr - a.metrics.irr)[0];
   const bestDrawdown = [...safeResults].sort((a, b) => a.metrics.maxDrawdown - b.metrics.maxDrawdown)[0]; // Lowest is best
   const bestSharpe = [...safeResults].sort((a, b) => b.metrics.sharpeRatio - a.metrics.sharpeRatio)[0];
   const bestRecoveryMonths = [...safeResults].sort((a, b) => a.metrics.maxRecoveryMonths - b.metrics.maxRecoveryMonths)[0]; // Lowest is best
-  const bestWorstYear = [...safeResults].sort((a, b) => b.metrics.worstYearReturn - a.metrics.worstYearReturn)[0]; // Highest is best
   const bestPainIndex = [...safeResults].sort((a, b) => a.metrics.painIndex - b.metrics.painIndex)[0]; // Lowest is best
   const bestCalmar = [...safeResults].sort((a, b) => b.metrics.calmarRatio - a.metrics.calmarRatio)[0];
 
@@ -191,74 +191,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     <div className="space-y-8">
       {showMath && <MathModelModal onClose={() => setShowMath(false)} />}
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title={t('bestBalance')}
-          value={`$${Math.round(bestBalance.metrics.finalBalance).toLocaleString()}`}
-          icon={<TrendingUp className="w-5 h-5" />}
-          winnerName={bestBalance.strategyName}
-          winnerColor={bestBalance.color}
-          highlight
-        />
-        <MetricCard
-          title={t('bestIrr')}
-          value={`${bestIRR.metrics.irr.toFixed(2)}%`}
-          icon={<Zap className="w-5 h-5" />}
-          winnerName={bestIRR.strategyName}
-          winnerColor={bestIRR.color}
-          highlight
-        />
-        <MetricCard
-          title={t('lowestDrawdown')}
-          value={`${bestDrawdown.metrics.maxDrawdown.toFixed(2)}%`}
-          icon={<ShieldAlert className="w-5 h-5" />}
-          winnerName={bestDrawdown.strategyName}
-          winnerColor={bestDrawdown.color}
-        />
-        <MetricCard
-          title={t('bestSharpe')}
-          value={bestSharpe.metrics.sharpeRatio.toFixed(2)}
-          icon={<Activity className="w-5 h-5" />}
-          winnerName={bestSharpe.strategyName}
-          winnerColor={bestSharpe.color}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <MetricCard
-          title={t('maxRecoveryTime')}
-          value={`${bestRecoveryMonths.metrics.maxRecoveryMonths} ${t('recoveryMonths')}`}
-          icon={<Clock className="w-5 h-5" />}
-          winnerName={bestRecoveryMonths.strategyName}
-          winnerColor={bestRecoveryMonths.color}
-        />
-        <MetricCard
-          title={t('worstYear')}
-          value={`${bestWorstYear.metrics.worstYearReturn.toFixed(2)}%`}
-          icon={<Calendar className="w-5 h-5" />}
-          winnerName={bestWorstYear.strategyName}
-          winnerColor={bestWorstYear.color}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <MetricCard
-          title={t('painIndex')}
-          value={`${bestPainIndex.metrics.painIndex.toFixed(2)}`}
-          icon={<Percent className="w-5 h-5" />}
-          winnerName={bestPainIndex.strategyName}
-          winnerColor={bestPainIndex.color}
-          highlight
-        />
-        <MetricCard
-          title={t('calmarRatio')}
-          value={`${bestCalmar.metrics.calmarRatio.toFixed(2)}`}
-          icon={<Scale className="w-5 h-5" />}
-          winnerName={bestCalmar.strategyName}
-          winnerColor={bestCalmar.color}
-        />
-      </div>
 
       {bankruptStrategies.length > 0 && (
         <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
@@ -575,6 +507,98 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Results Perspectives */}
+      <div className="space-y-6">
+        {/* Perspective: Absolute Return */}
+        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            <h3 className="font-bold text-slate-800">{t('perspective_return')}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard
+              title={t('bestBalance')}
+              value={`$${Math.round(bestBalance.metrics.finalBalance).toLocaleString()}`}
+              icon={<TrendingUp className="w-5 h-5" />}
+              winnerName={bestBalance.strategyName}
+              winnerColor={bestBalance.color}
+              highlight
+            />
+            <MetricCard
+              title={t('bestCagr')}
+              value={`${bestCAGR.metrics.cagr.toFixed(2)}%`}
+              icon={<Zap className="w-5 h-5" />}
+              winnerName={bestCAGR.strategyName}
+              winnerColor={bestCAGR.color}
+              highlight
+            />
+            <MetricCard
+              title={t('bestIrr')}
+              value={`${bestIRR.metrics.irr.toFixed(2)}%`}
+              icon={<Zap className="w-5 h-5" />}
+              winnerName={bestIRR.strategyName}
+              winnerColor={bestIRR.color}
+              highlight
+            />
+          </div>
+        </div>
+
+        {/* Perspective: Risk & Drawdown */}
+        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <ShieldAlert className="w-5 h-5 text-red-500" />
+            <h3 className="font-bold text-slate-800">{t('perspective_risk')}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard
+              title={t('lowestDrawdown')}
+              value={`${bestDrawdown.metrics.maxDrawdown.toFixed(2)}%`}
+              icon={<ShieldAlert className="w-5 h-5" />}
+              winnerName={bestDrawdown.strategyName}
+              winnerColor={bestDrawdown.color}
+            />
+            <MetricCard
+              title={t('maxRecoveryTime')}
+              value={`${bestRecoveryMonths.metrics.maxRecoveryMonths} ${t('recoveryMonths')}`}
+              icon={<Clock className="w-5 h-5" />}
+              winnerName={bestRecoveryMonths.strategyName}
+              winnerColor={bestRecoveryMonths.color}
+            />
+            <MetricCard
+              title={t('painIndex')}
+              value={`${bestPainIndex.metrics.painIndex.toFixed(2)}`}
+              icon={<Percent className="w-5 h-5" />}
+              winnerName={bestPainIndex.strategyName}
+              winnerColor={bestPainIndex.color}
+            />
+          </div>
+        </div>
+
+        {/* Perspective: Risk-Reward Ratio */}
+        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <Scale className="w-5 h-5 text-blue-500" />
+            <h3 className="font-bold text-slate-800">{t('perspective_ratio')}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MetricCard
+              title={t('bestSharpe')}
+              value={bestSharpe.metrics.sharpeRatio.toFixed(2)}
+              icon={<Activity className="w-5 h-5" />}
+              winnerName={bestSharpe.strategyName}
+              winnerColor={bestSharpe.color}
+            />
+            <MetricCard
+              title={t('calmarRatio')}
+              value={`${bestCalmar.metrics.calmarRatio.toFixed(2)}`}
+              icon={<Scale className="w-5 h-5" />}
+              winnerName={bestCalmar.strategyName}
+              winnerColor={bestCalmar.color}
+            />
+          </div>
         </div>
       </div>
 
