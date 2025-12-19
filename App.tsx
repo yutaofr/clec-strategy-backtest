@@ -13,11 +13,12 @@ import { LanguageProvider, useTranslation, Language } from './services/i18n';
 const DEFAULT_CONFIG_A: AssetConfig = {
   initialCapital: 10000,
   contributionAmount: 500,
-  contributionIntervalMonths: 1, 
+  contributionIntervalMonths: 1,
+  yearlyContributionMonth: 12, // Default to December
   qqqWeight: 50,
   qldWeight: 40,
   // Conservative DCA: Just buy QQQ
-  contributionQqqWeight: 100, 
+  contributionQqqWeight: 100,
   contributionQldWeight: 0,
   cashYieldAnnual: 2.0,
   leverage: {
@@ -36,7 +37,8 @@ const DEFAULT_CONFIG_A: AssetConfig = {
 const DEFAULT_CONFIG_B: AssetConfig = {
   initialCapital: 10000,
   contributionAmount: 500,
-  contributionIntervalMonths: 1, 
+  contributionIntervalMonths: 1,
+  yearlyContributionMonth: 12, // Default to December
   qqqWeight: 10,
   qldWeight: 80,
   // Aggressive DCA: Match the portfolio weights
@@ -59,14 +61,14 @@ const DEFAULT_CONFIG_B: AssetConfig = {
 const INITIAL_PROFILES: Profile[] = [
   {
     id: '1',
-    name: 'Conservative DCA',
+    name: 'Conservative',
     color: '#2563eb', // Blue
-    strategyType: 'DCA',
+    strategyType: 'NO_REBALANCE',
     config: DEFAULT_CONFIG_A
   },
   {
     id: '2',
-    name: 'Aggressive Smart',
+    name: 'Aggressive',
     color: '#ea580c', // Orange (High contrast)
     strategyType: 'SMART',
     config: DEFAULT_CONFIG_B
@@ -78,38 +80,38 @@ const MainApp = () => {
   const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
   const [results, setResults] = useState<SimulationResult[]>([]);
   const [isCalculated, setIsCalculated] = useState(false);
-  
+
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null);
-  
+
   // Sidebar state
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   // Auto-collapse on small screens initially
   useEffect(() => {
     if (window.innerWidth < 1024) {
-       setSidebarOpen(false);
+      setSidebarOpen(false);
     }
   }, []);
 
   const handleRunSimulation = useCallback(() => {
     const newResults = profiles.map(profile => {
-       const strategyFunc = getStrategyByType(profile.strategyType);
-       return runBacktest(
-         MARKET_DATA, 
-         strategyFunc, 
-         profile.config, 
-         profile.name,
-         profile.color
-       );
+      const strategyFunc = getStrategyByType(profile.strategyType);
+      return runBacktest(
+        MARKET_DATA,
+        strategyFunc,
+        profile.config,
+        profile.name,
+        profile.color
+      );
     });
 
     setResults(newResults);
     setIsCalculated(true);
-    
+
     // Auto close on mobile only
     if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
+      setSidebarOpen(false);
     }
   }, [profiles]);
 
@@ -119,17 +121,17 @@ const MainApp = () => {
   }, []);
 
   const handleViewDetails = (profileId: string) => {
-      if (!isCalculated) return;
-      // We need to map the profile ID to the result index.
-      // Since results map 1:1 to profiles array order:
-      const index = profiles.findIndex(p => p.id === profileId);
-      if (index >= 0 && results[index]) {
-          setReportResult(results[index]);
-      }
+    if (!isCalculated) return;
+    // We need to map the profile ID to the result index.
+    // Since results map 1:1 to profiles array order:
+    const index = profiles.findIndex(p => p.id === profileId);
+    if (index >= 0 && results[index]) {
+      setReportResult(results[index]);
+    }
   };
 
   const LangButton = ({ code, label }: { code: Language, label: string }) => (
-    <button 
+    <button
       onClick={() => setLanguage(code)}
       className={`text-xs px-2 py-1 rounded transition-colors font-medium ${language === code ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-200'}`}
     >
@@ -139,56 +141,56 @@ const MainApp = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans text-slate-900 relative overflow-x-hidden">
-      
+
       {/* Financial Report Modal */}
       {reportResult && (
-          <FinancialReportModal 
-             result={reportResult} 
-             onClose={() => setReportResult(null)} 
-          />
+        <FinancialReportModal
+          result={reportResult}
+          onClose={() => setReportResult(null)}
+        />
       )}
 
       {/* Mobile/Tablet Portrait Header (< 1024px) */}
       <div className="lg:hidden bg-white p-4 border-b border-slate-200 sticky top-0 z-40 flex flex-col gap-3 shadow-sm">
-         <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-               <LayoutDashboard className="text-blue-600"/>
-               <h1 className="font-bold text-lg">{t('appTitle')}</h1>
-             </div>
-             
-             <button 
-                onClick={() => setSidebarOpen(!isSidebarOpen)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${isSidebarOpen ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600'}`}
-             >
-                {isSidebarOpen ? <X className="w-5 h-5" /> : <Settings2 className="w-5 h-5" />}
-                <span className="text-sm font-medium">{isSidebarOpen ? t('done') : t('profiles')}</span>
-             </button>
-         </div>
-         
-         <div className="flex justify-between items-center">
-             <span className="text-xs text-slate-400 font-medium">
-               {isCalculated ? `${t('comparingPerformance')} ${results.length}` : ''}
-             </span>
-             <div className="flex gap-1">
-                 <LangButton code="en" label="EN" />
-                 <LangButton code="fr" label="FR" />
-                 <LangButton code="zh-CN" label="简" />
-                 <LangButton code="zh-TW" label="繁" />
-             </div>
-         </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LayoutDashboard className="text-blue-600" />
+            <h1 className="font-bold text-lg">{t('appTitle')}</h1>
+          </div>
+
+          <button
+            onClick={() => setSidebarOpen(!isSidebarOpen)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${isSidebarOpen ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600'}`}
+          >
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Settings2 className="w-5 h-5" />}
+            <span className="text-sm font-medium">{isSidebarOpen ? t('done') : t('profiles')}</span>
+          </button>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-slate-400 font-medium">
+            {isCalculated ? `${t('comparingPerformance')} ${results.length}` : ''}
+          </span>
+          <div className="flex gap-1">
+            <LangButton code="en" label="EN" />
+            <LangButton code="fr" label="FR" />
+            <LangButton code="zh-CN" label="简" />
+            <LangButton code="zh-TW" label="繁" />
+          </div>
+        </div>
       </div>
 
       {/* Mobile Backdrop Overlay */}
       {isSidebarOpen && (
-        <div 
-            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+        <div
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
-      <aside 
-          className={`
+      <aside
+        className={`
             fixed inset-y-0 left-0 z-50 
             bg-slate-50 border-r border-slate-200 
             flex flex-col flex-shrink-0
@@ -204,73 +206,73 @@ const MainApp = () => {
             ${isSidebarOpen ? 'lg:w-80 xl:w-96 lg:border-r' : 'lg:w-0 lg:border-none lg:overflow-hidden'}
           `}
       >
-         {/* Sidebar Header (Fixed within sidebar) */}
-         <div className="flex-shrink-0 p-4 border-b border-slate-200 bg-slate-50 flex flex-col gap-4">
-            <div className="hidden lg:flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <LayoutDashboard className="text-blue-600 w-6 h-6"/>
-                    <h1 className="font-bold text-xl tracking-tight text-slate-800">{t('appTitle')}</h1>
-                </div>
-                
-                {/* Desktop Collapse Button */}
-                <button 
-                    onClick={() => setSidebarOpen(false)}
-                    className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors"
-                    title="Collapse Sidebar"
-                >
-                    <PanelLeftClose className="w-5 h-5" />
-                </button>
+        {/* Sidebar Header (Fixed within sidebar) */}
+        <div className="flex-shrink-0 p-4 border-b border-slate-200 bg-slate-50 flex flex-col gap-4">
+          <div className="hidden lg:flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <LayoutDashboard className="text-blue-600 w-6 h-6" />
+              <h1 className="font-bold text-xl tracking-tight text-slate-800">{t('appTitle')}</h1>
             </div>
 
-            <div className="hidden lg:flex gap-1">
-                <LangButton code="en" label="English" />
-                <LangButton code="fr" label="Français" />
-                <LangButton code="zh-CN" label="简体中文" />
-                <LangButton code="zh-TW" label="繁體中文" />
-            </div>
-         </div>
+            {/* Desktop Collapse Button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors"
+              title="Collapse Sidebar"
+            >
+              <PanelLeftClose className="w-5 h-5" />
+            </button>
+          </div>
 
-         {/* Scrollable Content */}
-         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-8">
-             {/* Wrapper to ensure width stability during transitions */}
-             <div className="min-w-[18rem]">
-                 <ConfigPanel 
-                    profiles={profiles} 
-                    onProfilesChange={setProfiles} 
-                    onRun={handleRunSimulation}
-                    onViewDetails={handleViewDetails}
-                    hasResults={isCalculated}
-                 />
-                 
-                 <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">
-                    <p>{t('dataRange')}: 2000 - 2025</p>
-                    <p className="mt-2">{t('appDesc')}</p>
-                 </div>
-             </div>
-         </div>
+          <div className="hidden lg:flex gap-1">
+            <LangButton code="en" label="English" />
+            <LangButton code="fr" label="Français" />
+            <LangButton code="zh-CN" label="简体中文" />
+            <LangButton code="zh-TW" label="繁體中文" />
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-8">
+          {/* Wrapper to ensure width stability during transitions */}
+          <div className="min-w-[18rem]">
+            <ConfigPanel
+              profiles={profiles}
+              onProfilesChange={setProfiles}
+              onRun={handleRunSimulation}
+              onViewDetails={handleViewDetails}
+              hasResults={isCalculated}
+            />
+
+            <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">
+              <p>{t('dataRange')}: 2000 - 2025</p>
+              <p className="mt-2">{t('appDesc')}</p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 lg:p-8 relative">
-        
+
         {/* Desktop Expand Button (Floating) */}
         <div className={`fixed top-6 left-6 z-30 transition-opacity duration-300 ${!isSidebarOpen && window.innerWidth >= 1024 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-             <button 
-                onClick={() => setSidebarOpen(true)}
-                className="hidden lg:flex bg-white p-2.5 rounded-lg shadow-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 transition-all"
-                title="Open Sidebar"
-             >
-                <PanelLeftOpen className="w-6 h-6" />
-             </button>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="hidden lg:flex bg-white p-2.5 rounded-lg shadow-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 transition-all"
+            title="Open Sidebar"
+          >
+            <PanelLeftOpen className="w-6 h-6" />
+          </button>
         </div>
 
         {isCalculated ? (
           <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
-             <div className="mb-6 hidden lg:block">
-                <h2 className="text-2xl font-bold text-slate-800">{t('simulationResults')}</h2>
-                <p className="text-slate-500">{t('comparingPerformance')} {results.length} {t('profiles')}.</p>
-             </div>
-             <ResultsDashboard results={results} />
+            <div className="mb-6 hidden lg:block">
+              <h2 className="text-2xl font-bold text-slate-800">{t('simulationResults')}</h2>
+              <p className="text-slate-500">{t('comparingPerformance')} {results.length} {t('profiles')}.</p>
+            </div>
+            <ResultsDashboard results={results} />
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-slate-400">

@@ -24,6 +24,7 @@ export interface AssetConfig {
   initialCapital: number;
   contributionAmount: number; // Amount per period
   contributionIntervalMonths: number; // 1 = Monthly, 3 = Quarterly, 12 = Yearly
+  yearlyContributionMonth: number; // 1-12, which month for yearly contributions (default 12 = December)
 
   // Initial / Target Portfolio Allocation
   qqqWeight: number; // 0-100
@@ -40,7 +41,7 @@ export interface AssetConfig {
   leverage: LeverageConfig;
 }
 
-export type StrategyType = 'LUMP_SUM' | 'DCA' | 'REBALANCE' | 'SMART';
+export type StrategyType = 'NO_REBALANCE' | 'REBALANCE' | 'SMART';
 
 export interface Profile {
   id: string;

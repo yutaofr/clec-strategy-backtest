@@ -30,6 +30,7 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
   initialCapital: 10000,
   contributionAmount: 500,
   contributionIntervalMonths: 1,
+  yearlyContributionMonth: 12, // Default to December
   qqqWeight: 50,
   qldWeight: 40,
   contributionQqqWeight: 100, // Default to safer contribution
@@ -53,8 +54,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
 
   const STRATEGY_OPTIONS: { value: StrategyType, label: string }[] = [
-    { value: 'LUMP_SUM', label: t('strat_lumpSum') },
-    { value: 'DCA', label: t('strat_dca') },
+    { value: 'NO_REBALANCE', label: t('strat_noRebalance') },
     { value: 'REBALANCE', label: t('strat_rebalance') },
     { value: 'SMART', label: t('strat_smart') }
   ];
@@ -82,7 +82,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
       id: newId,
       name: `${t('profiles')} ${profiles.length + 1}`,
       color: nextColor,
-      strategyType: 'DCA',
+      strategyType: 'NO_REBALANCE',
       config: JSON.parse(JSON.stringify(DEFAULT_ASSET_CONFIG)) // Deep copy
     };
 
@@ -275,6 +275,30 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                 </select>
               </div>
             </div>
+            {/* Month Selector - Only show when frequency is Yearly */}
+            {profile.config.contributionIntervalMonths === 12 && (
+              <div className="mt-2">
+                <label className="text-[10px] text-slate-500 uppercase font-bold">{t('contributionMonth')}</label>
+                <select
+                  value={profile.config.yearlyContributionMonth || 12}
+                  onChange={(e) => updateProfile(profile.id, { yearlyContributionMonth: Number(e.target.value) })}
+                  className="w-full px-2 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm"
+                >
+                  <option value={1}>{t('month_jan')}</option>
+                  <option value={2}>{t('month_feb')}</option>
+                  <option value={3}>{t('month_mar')}</option>
+                  <option value={4}>{t('month_apr')}</option>
+                  <option value={5}>{t('month_may')}</option>
+                  <option value={6}>{t('month_jun')}</option>
+                  <option value={7}>{t('month_jul')}</option>
+                  <option value={8}>{t('month_aug')}</option>
+                  <option value={9}>{t('month_sep')}</option>
+                  <option value={10}>{t('month_oct')}</option>
+                  <option value={11}>{t('month_nov')}</option>
+                  <option value={12}>{t('month_dec')}</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Portfolio Allocation */}
