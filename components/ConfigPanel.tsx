@@ -46,7 +46,8 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
     withdrawType: 'PERCENT',
     withdrawValue: 2.0,
     inflationRate: 0.0, // Default 0%
-    interestType: 'CAPITALIZED' // Default to Capitalized
+    interestType: 'CAPITALIZED', // Default to Capitalized
+    ltvBasis: 'TOTAL_ASSETS' // Default to Total Assets
   }
 };
 
@@ -460,6 +461,25 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
                       {t('ltvNote')}
                     </p>
                   </div>
+                </div>
+
+                {/* Row 1.5: LTV Basis */}
+                <div>
+                   <label className="text-[10px] text-yellow-700 uppercase font-bold mb-1 block">{t('ltvBasis')}</label>
+                   <div className="flex bg-white rounded-lg border border-yellow-200 p-1">
+                     <button
+                       className={`flex-1 py-1 text-xs font-medium rounded ${profile.config.leverage.ltvBasis === 'TOTAL_ASSETS' ? 'bg-yellow-100 text-yellow-800' : 'text-slate-500 hover:bg-slate-50'}`}
+                       onClick={() => updateLeverage(profile.id, { ltvBasis: 'TOTAL_ASSETS' })}
+                     >
+                       {t('ltvTotalAssets')}
+                     </button>
+                     <button
+                       className={`flex-1 py-1 text-xs font-medium rounded ${profile.config.leverage.ltvBasis === 'COLLATERAL' ? 'bg-yellow-100 text-yellow-800' : 'text-slate-500 hover:bg-slate-50'}`}
+                       onClick={() => updateLeverage(profile.id, { ltvBasis: 'COLLATERAL' })}
+                     >
+                       {t('ltvCollateral')}
+                     </button>
+                   </div>
                 </div>
 
                 {/* Row 2: Pledge Ratios */}

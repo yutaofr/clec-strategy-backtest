@@ -31,7 +31,8 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     withdrawType: 'PERCENT',
     withdrawValue: 2.0,
     inflationRate: 0.0,
-    interestType: 'CAPITALIZED'
+    interestType: 'CAPITALIZED',
+    ltvBasis: 'TOTAL_ASSETS'
   }
 };
 
@@ -56,7 +57,8 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     withdrawType: 'PERCENT',
     withdrawValue: 2.0,
     inflationRate: 0.0,
-    interestType: 'CAPITALIZED'
+    interestType: 'CAPITALIZED',
+    ltvBasis: 'TOTAL_ASSETS'
   }
 };
 

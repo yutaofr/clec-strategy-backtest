@@ -19,6 +19,7 @@ export interface LeverageConfig {
   withdrawValue: number; // Percentage (e.g. 2.0) or Fixed Amount
   inflationRate: number; // Annual inflation rate for FIXED withdrawals
   interestType: 'MONTHLY' | 'MATURITY' | 'CAPITALIZED'; // NEW: Interest payment mode
+  ltvBasis: 'TOTAL_ASSETS' | 'COLLATERAL'; // NEW: LTV Calculation Basis
 }
 
 export interface AssetConfig {

@@ -40,7 +40,8 @@ export const runBacktest = (
     ...config.leverage,
     qqqPledgeRatio: config.leverage?.qqqPledgeRatio ?? 0.7,
     qldPledgeRatio: config.leverage?.qldPledgeRatio ?? 0.0,
-    cashPledgeRatio: config.leverage?.cashPledgeRatio ?? 0.95
+    cashPledgeRatio: config.leverage?.cashPledgeRatio ?? 0.95,
+    ltvBasis: config.leverage?.ltvBasis ?? 'TOTAL_ASSETS'
   };
 
   const monthlyLoanRate = leverage.enabled ? Math.pow(1 + leverage.interestRate / 100, 1 / 12) - 1 : 0;
@@ -241,7 +242,12 @@ export const runBacktest = (
       // Solvency Check
       if (effectiveCollateral > 0) {
         const totalLiability = currentState.debtBalance + currentState.accruedInterest;
-        currentState.ltv = (totalLiability / effectiveCollateral) * 100;
+        const ltvDenominator = leverage.ltvBasis === 'COLLATERAL' ? effectiveCollateral : totalAssetValue;
+        
+        // If basis is Collateral, we divide by Effective Collateral.
+        // If basis is Total Assets, we divide by Total Assets.
+        
+        currentState.ltv = ltvDenominator > 0 ? (totalLiability / ltvDenominator) * 100 : 9999;
       } else {
         currentState.ltv = (currentState.debtBalance + currentState.accruedInterest) > 0 ? 9999 : 0;
       }
