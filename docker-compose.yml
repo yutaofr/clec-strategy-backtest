@@ -9,7 +9,7 @@ services:
     environment:
       - NODE_ENV=development
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost" ]
+      test: ["CMD", "curl", "-f", "http://localhost"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -22,3 +22,14 @@ services:
     image: qqq-qld-backtester:latest
     ports:
       - "3000:80"
+
+  test:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      # Use a named volume for node_modules to persist installs across runs if needed,
+      # but for now let's just reinstall to be safe or rely on the mount if checking local modules.
+      # Actually, better to keep container modules separate.
+      - /app/node_modules
+    command: sh -c "npm install && npm test"
