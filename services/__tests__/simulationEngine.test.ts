@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { runBacktest } from '../simulationEngine';
-import { AssetConfig, MarketDataRow, StrategyFunction, PortfolioState } from '../../types';
+import { AssetConfig, MarketDataRow } from '../../types';
 import { strategyNoRebalance, strategyRebalance, strategySmart } from '../strategies';
 
 const createBaseConfig = (): AssetConfig => ({
