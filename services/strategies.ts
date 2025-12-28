@@ -162,7 +162,6 @@ export const strategySmart: StrategyFunction = (state, marketData, config, month
       if (actualBuyAmount > 0) {
         const sharesToBuy = actualBuyAmount / marketData.qld;
         newState.shares.QLD += sharesToBuy;
-        newState.shares.QLD += sharesToBuy;
         newState.cashBalance = Math.max(0, newState.cashBalance - actualBuyAmount);
         memory.lastAction = `Bought Dip ${actualBuyAmount.toFixed(2)}`;
       }
