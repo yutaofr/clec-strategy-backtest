@@ -218,38 +218,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
               ))}
             </div>
           </div>
-
-          {/* Living Expenses & Cash Buffer */}
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('spending_buffer')}</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">{t('config_expenseAmount')}</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    value={profile.config.annualExpenseAmount ?? 200}
-                    onChange={(e) => updateProfile(profile.id, { annualExpenseAmount: Number(e.target.value) })}
-                    className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">{t('config_coverageYears')}</label>
-                <div className="relative">
-                  <PieChart className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    value={profile.config.cashCoverageYears ?? 15}
-                    onChange={(e) => updateProfile(profile.id, { cashCoverageYears: Number(e.target.value) })}
-                    className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
+          
           {/* Strategy */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-500 uppercase">{t('strategy')}</label>
@@ -263,6 +232,47 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
               ))}
             </select>
           </div>
+
+          {/* Living Expenses & Cash Buffer (Only for Flexible Strategies) */}
+          {(profile.strategyType === 'FLEXIBLE_1' || profile.strategyType === 'FLEXIBLE_2') && (
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-3">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('spending_buffer')}</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">{t('config_expenseAmount')}</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="number"
+                      value={profile.config.annualExpenseAmount ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? undefined : Number(e.target.value);
+                        updateProfile(profile.id, { annualExpenseAmount: val });
+                      }}
+                      placeholder="200"
+                      className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">{t('config_coverageYears')}</label>
+                  <div className="relative">
+                    <PieChart className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="number"
+                      value={profile.config.cashCoverageYears ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? undefined : Number(e.target.value);
+                        updateProfile(profile.id, { cashCoverageYears: val });
+                      }}
+                      placeholder="15"
+                      className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <hr className="border-slate-100" />
 
