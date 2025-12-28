@@ -39,15 +39,11 @@ export interface AssetConfig {
   // Cash weight is derived: 100 - QQQ - QLD
   cashYieldAnnual: number; // Percentage, e.g., 4.0
 
-  // Flexible Rebalancing Config
-  annualExpenseAmount?: number; // Annual living expense amount (default 2% of initial capital)
-  cashCoverageYears?: number; // Target years of expenses in cash (default 15)
-
   // Stock Pledging
   leverage: LeverageConfig;
 }
 
-export type StrategyType = 'NO_REBALANCE' | 'REBALANCE' | 'SMART' | 'FLEXIBLE_1' | 'FLEXIBLE_2';
+export type StrategyType = 'NO_REBALANCE' | 'REBALANCE' | 'SMART';
 
 export interface Profile {
   id: string;
