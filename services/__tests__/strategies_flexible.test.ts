@@ -129,5 +129,18 @@ describe('Flexible Rebalancing Strategies', () => {
         expect(newState.shares.QQQ).toBeGreaterThan(500);
         expect(newState.cashBalance).toBe(50000); // Cash should rely on logic not touching it
     });
+
+    it('Adequate Cash + Bear Market: Should behave like Smart (Buy Dip)', () => {
+        // Cash 50k. QLD Loss (Profit < 0).
+        // Expect: Buy Dip with Cash.
+        // QLD Start 40k. Current 30k. Profit -10k.
+        
+        const state = createInitialState(50000, 500, 300, 40000);
+        const newState = strategyFlexible2(state, mockMarketData, baseConfig, 12);
+        
+        expect(newState.strategyMemory.lastAction).toContain('Aggressive: Buy Dip');
+        expect(newState.shares.QLD).toBeGreaterThan(300); // Bought dip
+        expect(newState.cashBalance).toBeLessThan(50000); // Used cash
+    });
   });
 });
