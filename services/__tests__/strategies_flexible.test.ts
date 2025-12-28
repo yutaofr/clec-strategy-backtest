@@ -143,4 +143,20 @@ describe('Flexible Rebalancing Strategies', () => {
         expect(newState.cashBalance).toBeLessThan(50000); // Used cash
     });
   });
+
+  describe('Sanity Checks & Boundaries', () => {
+    it('Should never result in negative shares or cash even with extreme values', () => {
+      // Extreme Setup: Very low shares/cash, force sell logic
+      // Cash 0. Profit > 0 (Force sell QLD -> Cash). But if we force a massive sell?
+      // Logic handles percentages/fixed logic, so normally fine.
+      // Let's test "Sell logic when we have ALMOST NO shares"
+      
+      const state = createInitialState(0, 0.0001, 0.0001, 0); // Practically empty
+      const newState = strategyFlexible1(state, mockMarketData, baseConfig, 12);
+      
+      expect(newState.shares.QQQ).toBeGreaterThanOrEqual(0);
+      expect(newState.shares.QLD).toBeGreaterThanOrEqual(0);
+      expect(newState.cashBalance).toBeGreaterThanOrEqual(0);
+    });
+  });
 });

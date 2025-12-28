@@ -148,7 +148,7 @@ export const strategySmart: StrategyFunction = (state, marketData, config, month
       const sellAmount = profit / 3;
       const sharesToSell = sellAmount / marketData.qld;
 
-      newState.shares.QLD -= sharesToSell;
+      newState.shares.QLD = Math.max(0, newState.shares.QLD - sharesToSell);
       newState.cashBalance += sellAmount;
 
       memory.lastAction = `Sold Profit ${sellAmount.toFixed(2)}`;
@@ -162,7 +162,8 @@ export const strategySmart: StrategyFunction = (state, marketData, config, month
       if (actualBuyAmount > 0) {
         const sharesToBuy = actualBuyAmount / marketData.qld;
         newState.shares.QLD += sharesToBuy;
-        newState.cashBalance -= actualBuyAmount;
+        newState.shares.QLD += sharesToBuy;
+        newState.cashBalance = Math.max(0, newState.cashBalance - actualBuyAmount);
         memory.lastAction = `Bought Dip ${actualBuyAmount.toFixed(2)}`;
       }
     }
@@ -239,7 +240,7 @@ export const strategyFlexible1: StrategyFunction = (state, marketData, config, m
         // Bull: Sell 1/3 QLD Profit -> Cash
         const sellAmount = profit / 3;
         const sharesToSell = sellAmount / marketData.qld;
-        newState.shares.QLD -= sharesToSell;
+        newState.shares.QLD = Math.max(0, newState.shares.QLD - sharesToSell);
         newState.cashBalance += sellAmount;
         memory.lastAction = `Defensive: Harvest Cash ${sellAmount.toFixed(0)}`;
       } else {
@@ -254,7 +255,7 @@ export const strategyFlexible1: StrategyFunction = (state, marketData, config, m
           const qqqSharesToSell = actualTransfer / marketData.qqq;
           const qldSharesToBuy = actualTransfer / marketData.qld;
           
-          newState.shares.QQQ -= qqqSharesToSell;
+          newState.shares.QQQ = Math.max(0, newState.shares.QQQ - qqqSharesToSell);
           newState.shares.QLD += qldSharesToBuy;
           memory.lastAction = `Defensive: Rebalance QQQ->QLD ${actualTransfer.toFixed(0)}`;
         }
@@ -266,7 +267,7 @@ export const strategyFlexible1: StrategyFunction = (state, marketData, config, m
       if (profit > 0) {
         const sellAmount = profit / 3;
         const sharesToSell = sellAmount / marketData.qld;
-        newState.shares.QLD -= sharesToSell;
+        newState.shares.QLD = Math.max(0, newState.shares.QLD - sharesToSell);
         newState.cashBalance += sellAmount;
         memory.lastAction = `Adequate: Smart Profit ${sellAmount.toFixed(0)}`;
       } else {
@@ -275,7 +276,7 @@ export const strategyFlexible1: StrategyFunction = (state, marketData, config, m
         if (actualBuyAmount > 0) {
           const sharesToBuy = actualBuyAmount / marketData.qld;
           newState.shares.QLD += sharesToBuy;
-          newState.cashBalance -= actualBuyAmount;
+          newState.cashBalance = Math.max(0, newState.cashBalance - actualBuyAmount);
           memory.lastAction = `Adequate: Smart Dip ${actualBuyAmount.toFixed(0)}`;
         }
       }
@@ -347,7 +348,7 @@ export const strategyFlexible2: StrategyFunction = (state, marketData, config, m
         if (actualTransfer > 0) {
           const qqqSharesToSell = actualTransfer / marketData.qqq;
           const qldSharesToBuy = actualTransfer / marketData.qld;
-          newState.shares.QQQ -= qqqSharesToSell;
+          newState.shares.QQQ = Math.max(0, newState.shares.QQQ - qqqSharesToSell);
           newState.shares.QLD += qldSharesToBuy;
           memory.lastAction = `Defensive: Rebalance QQQ->QLD ${actualTransfer.toFixed(0)}`;
         }
@@ -371,7 +372,7 @@ export const strategyFlexible2: StrategyFunction = (state, marketData, config, m
         if (actualBuyAmount > 0) {
           const sharesToBuy = actualBuyAmount / marketData.qld;
           newState.shares.QLD += sharesToBuy;
-          newState.cashBalance -= actualBuyAmount;
+          newState.cashBalance = Math.max(0, newState.cashBalance - actualBuyAmount);
           memory.lastAction = `Aggressive: Buy Dip ${actualBuyAmount.toFixed(0)}`;
         }
       }

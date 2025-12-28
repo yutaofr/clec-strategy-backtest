@@ -110,14 +110,9 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
     onProfilesChange(prevProfiles => prevProfiles.map(p => {
       if (p.id !== id) return p;
       // Define configuration keys explicitly to ensure correct routing
-      const configKeys = [
-        'initialCapital', 'contributionAmount', 'contributionIntervalMonths', 
-        'yearlyContributionMonth', 'qqqWeight', 'qldWeight', 
-        'contributionQqqWeight', 'contributionQldWeight', 'cashYieldAnnual',
-        'annualExpenseAmount', 'cashCoverageYears'
-      ];
-      
-      const isConfigUpdate = Object.keys(updates).some(k => configKeys.includes(k));
+      // Use keys from DEFAULT_ASSET_CONFIG to determine if it's a config update
+      // This is more robust than hardcoding keys and ensures future config additions work automatically
+      const isConfigUpdate = Object.keys(updates).some(k => k in DEFAULT_ASSET_CONFIG);
       if (isConfigUpdate) {
         return { ...p, config: { ...p.config, ...updates } };
       }
