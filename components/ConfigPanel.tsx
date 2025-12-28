@@ -6,7 +6,7 @@ import { useTranslation } from '../services/i18n';
 
 interface ConfigPanelProps {
   profiles: Profile[];
-  onProfilesChange: (profiles: Profile[]) => void;
+  onProfilesChange: (profiles: Profile[] | ((prev: Profile[]) => Profile[])) => void;
   onRun: () => void;
   onViewDetails: (profileId: string) => void;
   hasResults: boolean;
@@ -48,7 +48,9 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
     inflationRate: 0.0, // Default 0%
     interestType: 'CAPITALIZED', // Default to Capitalized
     ltvBasis: 'TOTAL_ASSETS' // Default to Total Assets
-  }
+  },
+  annualExpenseAmount: 200,
+  cashCoverageYears: 15
 };
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesChange, onRun, onViewDetails, hasResults }) => {
@@ -58,7 +60,9 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
   const STRATEGY_OPTIONS: { value: StrategyType, label: string }[] = [
     { value: 'NO_REBALANCE', label: t('strat_noRebalance') },
     { value: 'REBALANCE', label: t('strat_rebalance') },
-    { value: 'SMART', label: t('strat_smart') }
+    { value: 'SMART', label: t('strat_smart') },
+    { value: 'FLEXIBLE_1', label: t('strat_flex1') },
+    { value: 'FLEXIBLE_2', label: t('strat_flex2') }
   ];
 
   const getStrategyLabel = (type: string) => {
@@ -103,9 +107,11 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
   };
 
   const updateProfile = (id: string, updates: Partial<Profile> | Partial<AssetConfig>) => {
-    onProfilesChange(profiles.map(p => {
+    onProfilesChange(prevProfiles => prevProfiles.map(p => {
       if (p.id !== id) return p;
-      // Check if keys belong to config or profile root
+      // Define configuration keys explicitly to ensure correct routing
+      // Use keys from DEFAULT_ASSET_CONFIG to determine if it's a config update
+      // This is more robust than hardcoding keys and ensures future config additions work automatically
       const isConfigUpdate = Object.keys(updates).some(k => k in DEFAULT_ASSET_CONFIG);
       if (isConfigUpdate) {
         return { ...p, config: { ...p.config, ...updates } };
@@ -114,7 +120,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
     }));
   };
   const updateLeverage = (id: string, updates: Partial<AssetConfig['leverage']>) => {
-    onProfilesChange(profiles.map(p => {
+    onProfilesChange(prevProfiles => prevProfiles.map(p => {
       if (p.id !== id) return p;
       return {
         ...p,
@@ -207,7 +213,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
               ))}
             </div>
           </div>
-
+          
           {/* Strategy */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-500 uppercase">{t('strategy')}</label>
@@ -221,6 +227,47 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ profiles, onProfilesCh
               ))}
             </select>
           </div>
+
+          {/* Living Expenses & Cash Buffer (Only for Flexible Strategies) */}
+          {(profile.strategyType === 'FLEXIBLE_1' || profile.strategyType === 'FLEXIBLE_2') && (
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-3">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('spending_buffer')}</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">{t('config_expenseAmount')}</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="number"
+                      value={profile.config.annualExpenseAmount ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? undefined : Number(e.target.value);
+                        updateProfile(profile.id, { annualExpenseAmount: val });
+                      }}
+                      placeholder="200"
+                      className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">{t('config_coverageYears')}</label>
+                  <div className="relative">
+                    <PieChart className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="number"
+                      value={profile.config.cashCoverageYears ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? undefined : Number(e.target.value);
+                        updateProfile(profile.id, { cashCoverageYears: val });
+                      }}
+                      placeholder="15"
+                      className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <hr className="border-slate-100" />
 
