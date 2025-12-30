@@ -8,16 +8,27 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://app:80',
+    baseURL: 'http://localhost',
     trace: 'on-first-retry',
     actionTimeout: 10000,
     navigationTimeout: 30000,
   },
   timeout: 60000,
+  webServer: {
+    command: 'echo "App server managed by docker-compose"',
+    url: 'http://localhost',
+    timeout: 120000,
+    reuseExistingServer: true,
+  },
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        },
+      },
     },
   ],
 })

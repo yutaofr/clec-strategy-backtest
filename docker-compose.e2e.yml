@@ -7,16 +7,33 @@ services:
       - '5173:80'
     environment:
       - NODE_ENV=development
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:80']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
   e2e:
-    image: mcr.microsoft.com/playwright:v1.42.1-focal
+    image: mcr.microsoft.com/playwright:v1.57.0-jammy
     working_dir: /app
     volumes:
       - .:/app
       - ./playwright-report:/app/playwright-report
     environment:
       - CI=true
+    network_mode: 'service:app'
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     command: >
-      sh -c "npm install && npx playwright test"
+      sh -c "
+        npm install &&
+        echo 'Waiting for app to be ready...' &&
+        until curl -f http://localhost > /dev/null 2>&1; do
+          echo 'App not ready yet, waiting...'
+          sleep 2
+        done &&
+        echo 'App is ready, starting tests...' &&
+        npx playwright test
+      "
