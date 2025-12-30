@@ -67,10 +67,6 @@ const DEFAULT_ASSET_CONFIG: AssetConfig = {
     interestType: 'CAPITALIZED', // Default to Capitalized
     ltvBasis: 'TOTAL_ASSETS', // Default to Total Assets
   },
-  commissions: {
-    enabled: false,
-    percent: 0.03,
-  },
   annualExpenseAmount: 200,
   cashCoverageYears: 15,
 }
@@ -183,20 +179,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           config: {
             ...p.config,
             leverage: { ...p.config.leverage, ...updates },
-          },
-        }
-      }),
-    )
-  }
-  const updateCommissions = (id: string, updates: Partial<AssetConfig['commissions']>) => {
-    onProfilesChange((prevProfiles) =>
-      prevProfiles.map((p) => {
-        if (p.id !== id) return p
-        return {
-          ...p,
-          config: {
-            ...p.config,
-            commissions: { ...p.config.commissions, ...updates },
           },
         }
       }),
@@ -788,45 +770,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   <p className="text-[10px] text-yellow-600 mt-2 italic leading-tight">
                     {t('leverageWarning')}
                   </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Trading Commissions */}
-          <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between text-sm font-medium text-blue-800">
-              <div className="flex items-center gap-2">
-                <Landmark className="w-4 h-4" /> {t('tradingCommissions')}
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={profile.config.commissions?.enabled || false}
-                  onChange={(e) => updateCommissions(profile.id, { enabled: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-
-            {profile.config.commissions?.enabled && (
-              <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
-                <div className="grid grid-cols-1 gap-3">
-                  <div>
-                    <label className="text-[10px] text-blue-700 uppercase font-bold">
-                      {t('commissionPercent')}
-                    </label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      value={profile.config.commissions.percent}
-                      onChange={(e) =>
-                        updateCommissions(profile.id, { percent: Number(e.target.value) })
-                      }
-                      className="w-full px-2 py-2 border border-blue-200 rounded-lg outline-none"
-                    />
-                  </div>
                 </div>
               </div>
             )}

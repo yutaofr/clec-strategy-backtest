@@ -1,4 +1,4 @@
-import { PortfolioState, CommissionConfig } from '../types'
+import { PortfolioState } from '../types'
 
 /**
  * Calculates Compound Annual Growth Rate
@@ -215,14 +215,4 @@ export const calculateUlcerIndex = (history: PortfolioState[]): number => {
   })
 
   return Math.sqrt(sumSquaredDrawdowns / history.length)
-}
-
-/**
- * Calculates trading commission based on trade value and configuration
- */
-export const calculateCommission = (tradeValue: number, config: CommissionConfig): number => {
-  if (!config.enabled) return 0
-
-  const absValue = Math.abs(tradeValue)
-  return absValue * ((config.percent || 0) / 100)
 }

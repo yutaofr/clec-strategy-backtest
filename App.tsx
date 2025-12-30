@@ -34,10 +34,6 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     interestType: 'CAPITALIZED',
     ltvBasis: 'TOTAL_ASSETS',
   },
-  commissions: {
-    enabled: false,
-    percent: 0.03,
-  },
   annualExpenseAmount: 200,
   cashCoverageYears: 15,
 }
@@ -65,10 +61,6 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     inflationRate: 0.0,
     interestType: 'CAPITALIZED',
     ltvBasis: 'TOTAL_ASSETS',
-  },
-  commissions: {
-    enabled: false,
-    percent: 0.03,
   },
   annualExpenseAmount: 200,
   cashCoverageYears: 15,
