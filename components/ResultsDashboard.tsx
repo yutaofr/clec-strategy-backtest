@@ -90,10 +90,15 @@ const CustomTooltip = ({
   formatType?: 'currency' | 'percent' | 'number' | 'auto'
 }) => {
   if (active && payload && payload.length) {
+    const filteredPayload = (payload as { name: string; value: number; color: string }[]).filter(
+      (p) => !p.name.startsWith('_'),
+    )
+    if (filteredPayload.length === 0) return null
+
     return (
       <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg text-xs">
         <p className="font-bold text-slate-700 mb-2">{label}</p>
-        {(payload as { name: string; value: number; color: string }[]).map((p) => {
+        {filteredPayload.map((p) => {
           let formattedValue = ''
           const val = Number(p.value)
 
@@ -168,6 +173,24 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
   const activeResults = results.filter((r) => !r.isBankrupt)
   const safeResults = activeResults.length > 0 ? activeResults : results
 
+  // Calculate overall data max for Y-axis scaling
+  const dataMaxVal = results.reduce(
+    (max, res) => Math.max(max, ...res.history.map((h) => h.totalValue)),
+    0,
+  )
+
+  // Calculate a clean upper bound: 5% buffer, then round up to next 10k/25k/100k
+  const rawMax = dataMaxVal > 0 ? dataMaxVal * 1.05 : 10000
+  let cleanStep = 10000
+  if (rawMax > 1000000) cleanStep = 100000
+  else if (rawMax > 500000) cleanStep = 50000
+  else if (rawMax > 100000) cleanStep = 25000
+
+  const yAxisMaxBound = Math.ceil(rawMax / cleanStep) * cleanStep
+  if (typeof window !== 'undefined') {
+    ;(window as unknown as { __CHART_GLOBAL_MAX: number }).__CHART_GLOBAL_MAX = dataMaxVal
+  }
+
   // Prepare Chart Data (Growth)
   const chartData = results[0].history.map((_, idx) => {
     const row: Record<string, string | number> = { date: results[0].history[idx].date }
@@ -176,6 +199,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       const val = res.history[idx]?.totalValue ?? 0
       row[res.strategyName] = val
     })
+    // Add dummy point to anchor Y-axis (hidden in Line)
+    row['_yAnchor'] = yAxisMaxBound
     return row
   })
 
@@ -342,9 +367,33 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tick={{ fontSize: 12 }}
                 stroke="#94a3b8"
                 tickFormatter={(val) => `$${val / 1000}k`}
+                domain={[0, yAxisMaxBound]}
+                ticks={(() => {
+                  const step = cleanStep > 0 ? cleanStep * 2 : 100000 // Avoid too many ticks
+                  const ticks: number[] = [0]
+                  let curr = step
+                  while (curr < yAxisMaxBound) {
+                    ticks.push(curr)
+                    curr += step
+                  }
+                  if (ticks[ticks.length - 1] !== yAxisMaxBound) {
+                    ticks.push(yAxisMaxBound)
+                  }
+                  return ticks
+                })()}
+                interval={0}
+                allowDataOverflow={true}
               />
               <Tooltip content={<CustomTooltip formatType="currency" />} />
               <Legend />
+              {/* Hidden anchor line to force Y-axis domain */}
+              <Line
+                dataKey="_yAnchor"
+                stroke="none"
+                dot={false}
+                activeDot={false}
+                legendType="none"
+              />
               {results.map((res) => (
                 <Line
                   key={res.strategyName}
@@ -427,7 +476,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tickFormatter={(val) => val.substring(0, 4)}
                 stroke="#94a3b8"
               />
-              <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                stroke="#94a3b8"
+                unit="%"
+                domain={[(dataMin: number) => Math.floor(dataMin * 1.05), 0]}
+              />
               <Tooltip content={<CustomTooltip formatType="percent" />} />
               <Legend />
               {results.map((res) => (
@@ -464,7 +518,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tickFormatter={(val) => val.substring(0, 4)}
                 stroke="#94a3b8"
               />
-              <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" domain={[0, 'auto']} />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                stroke="#94a3b8"
+                domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax * 1.1 * 10) / 10)]}
+              />
               <Tooltip content={<CustomTooltip formatType="number" />} />
               <Legend />
               {results.map((res) => (
@@ -507,7 +565,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                   tick={{ fontSize: 12 }}
                   stroke="#94a3b8"
                   unit="%"
-                  domain={[0, 'auto']}
+                  domain={[0, (dataMax: number) => Math.min(100, Math.ceil(dataMax * 1.1))]}
                   allowDataOverflow={false}
                 />
                 <Tooltip content={<CustomTooltip formatType="percent" />} />
