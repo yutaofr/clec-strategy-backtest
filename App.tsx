@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { ConfigPanel } from './components/ConfigPanel'
 import { ResultsDashboard } from './components/ResultsDashboard'
 import { FinancialReportModal } from './components/FinancialReportModal'
@@ -288,6 +289,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <MainApp />
+      <Analytics />
     </LanguageProvider>
   )
 }
