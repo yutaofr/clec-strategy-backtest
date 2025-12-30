@@ -180,13 +180,29 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
   )
 
   // Calculate a clean upper bound: 5% buffer, then round up to next 10k/25k/100k
-  const rawMax = dataMaxVal > 0 ? dataMaxVal * 1.05 : 10000
-  let cleanStep = 10000
-  if (rawMax > 1000000) cleanStep = 100000
-  else if (rawMax > 500000) cleanStep = 50000
-  else if (rawMax > 100000) cleanStep = 25000
+  const getCleanAxisConfig = (maxVal: number, targetTicks = 6) => {
+    const rawMax = maxVal > 0 ? maxVal * 1.05 : 1
+    const roughStep = rawMax / targetTicks
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)) || 0)
+    const normalizedStep = roughStep / magnitude
 
-  const yAxisMaxBound = Math.ceil(rawMax / cleanStep) * cleanStep
+    let cleanStep = magnitude
+    if (normalizedStep > 5) cleanStep = 10 * magnitude
+    else if (normalizedStep > 2) cleanStep = 5 * magnitude
+    else if (normalizedStep > 1) cleanStep = 2 * magnitude
+
+    const maxBound = Math.ceil(rawMax / cleanStep) * cleanStep
+    const ticks: number[] = [0]
+    let curr = cleanStep
+    while (curr < maxBound + cleanStep / 10) {
+      ticks.push(Number(curr.toFixed(10))) // Avoid floating point issues
+      curr += cleanStep
+    }
+    return { step: cleanStep, maxBound, ticks }
+  }
+
+  const growthConfig = getCleanAxisConfig(dataMaxVal)
+
   if (typeof window !== 'undefined') {
     ;(window as unknown as { __CHART_GLOBAL_MAX: number }).__CHART_GLOBAL_MAX = dataMaxVal
   }
@@ -200,7 +216,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       row[res.strategyName] = val
     })
     // Add dummy point to anchor Y-axis (hidden in Line)
-    row['_yAnchor'] = yAxisMaxBound
+    row['_yAnchor'] = growthConfig.maxBound
     return row
   })
 
@@ -367,20 +383,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tick={{ fontSize: 12 }}
                 stroke="#94a3b8"
                 tickFormatter={(val) => `$${val / 1000}k`}
-                domain={[0, yAxisMaxBound]}
-                ticks={(() => {
-                  const step = cleanStep > 0 ? cleanStep * 2 : 100000 // Avoid too many ticks
-                  const ticks: number[] = [0]
-                  let curr = step
-                  while (curr < yAxisMaxBound) {
-                    ticks.push(curr)
-                    curr += step
-                  }
-                  if (ticks[ticks.length - 1] !== yAxisMaxBound) {
-                    ticks.push(yAxisMaxBound)
-                  }
-                  return ticks
-                })()}
+                domain={[0, growthConfig.maxBound]}
+                ticks={growthConfig.ticks}
                 interval={0}
                 allowDataOverflow={true}
               />
@@ -480,7 +484,21 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tick={{ fontSize: 12 }}
                 stroke="#94a3b8"
                 unit="%"
-                domain={[(dataMin: number) => Math.floor(dataMin * 1.05), 0]}
+                domain={[(dataMin: number) => -getCleanAxisConfig(Math.abs(dataMin)).maxBound, 0]}
+                ticks={(() => {
+                  const dataMin = results.reduce((min, res) => {
+                    let peak = -Infinity
+                    const m = res.history.reduce((low, h) => {
+                      if (h.totalValue > peak) peak = h.totalValue
+                      const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100
+                      return Math.min(low, dd)
+                    }, 0)
+                    return Math.min(min, m)
+                  }, 0)
+                  const config = getCleanAxisConfig(Math.abs(dataMin))
+                  return config.ticks.map((t) => -t).reverse()
+                })()}
+                interval={0}
               />
               <Tooltip content={<CustomTooltip formatType="percent" />} />
               <Legend />
@@ -521,7 +539,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               <YAxis
                 tick={{ fontSize: 12 }}
                 stroke="#94a3b8"
-                domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax * 1.1 * 10) / 10)]}
+                domain={[
+                  0,
+                  (dataMax: number) => getCleanAxisConfig(Math.max(1, dataMax), 5).maxBound,
+                ]}
+                ticks={(() => {
+                  const dataMax = results.reduce(
+                    (max, res) => Math.max(max, ...res.history.map((h) => h.beta)),
+                    0,
+                  )
+                  return getCleanAxisConfig(Math.max(1, dataMax), 5).ticks
+                })()}
+                interval={0}
               />
               <Tooltip content={<CustomTooltip formatType="number" />} />
               <Legend />
@@ -543,7 +572,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
       {/* LTV Chart - Only visible if leverage is used */}
       {leveragedProfiles.length > 0 && (
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div id="ltv-chart" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-lg font-bold text-slate-800">{t('ltvChartTitle')}</h3>
             <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded font-bold border border-yellow-200 flex items-center gap-1">
@@ -565,7 +594,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                   tick={{ fontSize: 12 }}
                   stroke="#94a3b8"
                   unit="%"
-                  domain={[0, (dataMax: number) => Math.min(100, Math.ceil(dataMax * 1.1))]}
+                  domain={[
+                    0,
+                    (dataMax: number) =>
+                      Math.min(100, getCleanAxisConfig(Math.max(10, dataMax), 5).maxBound),
+                  ]}
+                  ticks={(() => {
+                    const dataMax = results.reduce(
+                      (max, res) => Math.max(max, ...res.history.map((h) => h.ltv)),
+                      0,
+                    )
+                    const config = getCleanAxisConfig(Math.max(10, dataMax), 5)
+                    return config.ticks.filter((t) => t <= 100)
+                  })()}
+                  interval={0}
                   allowDataOverflow={false}
                 />
                 <Tooltip content={<CustomTooltip formatType="percent" />} />
