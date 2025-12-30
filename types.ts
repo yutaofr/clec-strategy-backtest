@@ -6,6 +6,11 @@ export interface MarketDataRow {
   qld: number
 }
 
+export interface CommissionConfig {
+  enabled?: boolean
+  percent?: number // Commission as percentage of trade value (e.g., 0.03 for 0.03%)
+}
+
 export interface LeverageConfig {
   enabled: boolean
   interestRate: number // Annual interest rate for the loan
@@ -44,6 +49,9 @@ export interface AssetConfig {
 
   // Stock Pledging
   leverage: LeverageConfig
+
+  // Trading Commissions
+  commissions?: CommissionConfig
 }
 
 export type StrategyType = 'NO_REBALANCE' | 'REBALANCE' | 'SMART' | 'FLEXIBLE_1' | 'FLEXIBLE_2'

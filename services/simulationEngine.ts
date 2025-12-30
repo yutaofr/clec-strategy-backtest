@@ -15,6 +15,7 @@ import {
   calculateAnnualReturns,
   calculateRealValue,
   calculateUlcerIndex,
+  calculateCommission,
 } from './financeMath'
 
 export const runBacktest = (
@@ -173,6 +174,19 @@ export const runBacktest = (
         amount: -cost,
         description: `${qqqDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qqqDiff).toFixed(2)} QQQ @ ${dataRow.qqq.toFixed(2)}`,
       })
+
+      // Apply commissions
+      if (config.commissions?.enabled) {
+        const commission = calculateCommission(cost, config.commissions)
+        if (commission > 0) {
+          currentState.cashBalance -= commission
+          monthEvents.push({
+            type: 'TRADE',
+            amount: -commission,
+            description: `QQQ Commission: -$${commission.toFixed(2)}`,
+          })
+        }
+      }
     }
     if (Math.abs(qldDiff) > 0.001) {
       const cost = qldDiff * dataRow.qld
@@ -181,6 +195,19 @@ export const runBacktest = (
         amount: -cost,
         description: `${qldDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qldDiff).toFixed(2)} QLD @ ${dataRow.qld.toFixed(2)}`,
       })
+
+      // Apply commissions
+      if (config.commissions?.enabled) {
+        const commission = calculateCommission(cost, config.commissions)
+        if (commission > 0) {
+          currentState.cashBalance -= commission
+          monthEvents.push({
+            type: 'TRADE',
+            amount: -commission,
+            description: `QLD Commission: -$${commission.toFixed(2)}`,
+          })
+        }
+      }
     }
 
     // Detect DCA Deposit (Approximation: If we bought shares but cash didn't drop by full amount, or cash increased)
