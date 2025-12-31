@@ -33,8 +33,10 @@ const generateMarketData = (months: number): MarketDataRow[] => {
   for (let i = 0; i < months; i++) {
     data.push({
       date: `2020-${(i + 1).toString().padStart(2, '0')}-01`,
-      qqq: 100,
-      qld: 100,
+      qqqClose: 100,
+      qqqLow: 100,
+      qldClose: 100,
+      qldLow: 100,
     })
   }
   return data

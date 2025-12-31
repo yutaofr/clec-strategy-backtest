@@ -165,28 +165,28 @@ export const runBacktest = (
     const qqqDiff = currentState.shares.QQQ - sharesBeforeStrat.QQQ
     const qldDiff = currentState.shares.QLD - sharesBeforeStrat.QLD
 
-    // Estimate cost based on current price
+    // Estimate cost based on close price (trade execution price)
     if (Math.abs(qqqDiff) > 0.001) {
-      const cost = qqqDiff * dataRow.qqq
+      const cost = qqqDiff * dataRow.qqqClose
       monthEvents.push({
         type: 'TRADE',
         amount: -cost,
-        description: `${qqqDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qqqDiff).toFixed(2)} QQQ @ ${dataRow.qqq.toFixed(2)}`,
+        description: `${qqqDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qqqDiff).toFixed(2)} QQQ @ ${dataRow.qqqClose.toFixed(2)}`,
       })
     }
     if (Math.abs(qldDiff) > 0.001) {
-      const cost = qldDiff * dataRow.qld
+      const cost = qldDiff * dataRow.qldClose
       monthEvents.push({
         type: 'TRADE',
         amount: -cost,
-        description: `${qldDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qldDiff).toFixed(2)} QLD @ ${dataRow.qld.toFixed(2)}`,
+        description: `${qldDiff > 0 ? 'Buy' : 'Sell'} ${Math.abs(qldDiff).toFixed(2)} QLD @ ${dataRow.qldClose.toFixed(2)}`,
       })
     }
 
     // Detect DCA Deposit (Approximation: If we bought shares but cash didn't drop by full amount, or cash increased)
     // Net flow = (Cash_End - Cash_Start) + Cost_Of_Buys
     // If Net flow > 0, that's external deposit.
-    const netTradeCost = qqqDiff * dataRow.qqq + qldDiff * dataRow.qld
+    const netTradeCost = qqqDiff * dataRow.qqqClose + qldDiff * dataRow.qldClose
     const impliedCashFlow = currentState.cashBalance - cashBeforeStrat + netTradeCost
 
     // Small epsilon for float errors
@@ -202,8 +202,9 @@ export const runBacktest = (
     if (leverage.enabled) {
       const currentMonth = parseInt(dataRow.date.substring(5, 7)) - 1
 
-      const qqqValue = currentState.shares.QQQ * dataRow.qqq
-      const qldValue = currentState.shares.QLD * dataRow.qld
+      // Use LOW prices for conservative valuation (margin call assessment)
+      const qqqValue = currentState.shares.QQQ * dataRow.qqqLow
+      const qldValue = currentState.shares.QLD * dataRow.qldLow
       const cashValue = currentState.cashBalance
       const totalAssetValue = qqqValue + qldValue + cashValue
 
@@ -288,8 +289,9 @@ export const runBacktest = (
 
     // 4. Update Net Value & Risk Metrics
     if (!isBankrupt) {
-      const qqqVal = currentState.shares.QQQ * dataRow.qqq
-      const qldVal = currentState.shares.QLD * dataRow.qld
+      // Use LOW prices for conservative net value calculation
+      const qqqVal = currentState.shares.QQQ * dataRow.qqqLow
+      const qldVal = currentState.shares.QLD * dataRow.qldLow
       const cashVal = currentState.cashBalance
 
       const assets = qqqVal + qldVal + cashVal

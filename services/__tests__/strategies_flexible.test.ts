@@ -22,8 +22,10 @@ describe('Flexible Rebalancing Strategies', () => {
 
   const mockMarketData: MarketDataRow = {
     date: '2023-12-31',
-    qqq: 100,
-    qld: 100,
+    qqqClose: 100,
+    qqqLow: 100,
+    qldClose: 100,
+    qldLow: 100,
   } as unknown as MarketDataRow
 
   const createInitialState = (

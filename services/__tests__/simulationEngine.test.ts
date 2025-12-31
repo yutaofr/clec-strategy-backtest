@@ -40,8 +40,10 @@ const generateMarketData = (
     const dateStr = `${year}-${month.toString().padStart(2, '0')}-01`
     data.push({
       date: dateStr,
-      qqq: qqqPrice,
-      qld: qldPrice,
+      qqqClose: qqqPrice,
+      qqqLow: qqqPrice, // Use same price for simplicity in tests
+      qldClose: qldPrice,
+      qldLow: qldPrice, // Use same price for simplicity in tests
     })
   }
   return data
@@ -282,7 +284,7 @@ describe('simulationEngine - Comprehensive Matrix', () => {
     it('Yearly Rebalance', () => {
       const config = createBaseConfig()
       const data = generateMarketData(14)
-      data[1].qqq = 200 // Skew
+      data[1].qqqClose = 200 // Skew
       const result = runBacktest(data, strategyRebalance, config, 'Test')
       const state = result.history[12]
       const qqqVal = state.shares.QQQ * 100
@@ -294,7 +296,7 @@ describe('simulationEngine - Comprehensive Matrix', () => {
       const config = createBaseConfig()
       config.initialCapital = 10000
       const data = generateMarketData(13)
-      data[11].qld = 200 // Profit target
+      data[11].qldClose = 200 // Profit target
       const result = runBacktest(data, strategySmart, config, 'Test')
       expect(result.history[11].strategyMemory.lastAction).toMatch(/Sold Profit/)
     })

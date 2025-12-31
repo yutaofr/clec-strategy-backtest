@@ -29,8 +29,10 @@ const mockConfig: AssetConfig = {
 
 const mockMarketData: MarketDataRow = {
   date: '2020-01-01',
-  qqq: 100,
-  qld: 50,
+  qqqClose: 100,
+  qldClose: 50,
+  qqqLow: 100,
+  qldLow: 50,
 }
 
 const mockState: PortfolioState = {

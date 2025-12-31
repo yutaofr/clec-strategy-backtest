@@ -37,7 +37,7 @@ const SOLVENCY_PROFILES: Profile[] = [
   },
   {
     id: '3n492d5zo',
-    name: '美國433聰明再平衡 質押借款利息6.5%，collateral Value LTV 80%最多每年借款2.1%成功',
+    name: '美國433聰明再平衡 質押借款利息6.5%，collateral Value LTV 80%最多每年借款1.9%成功',
     color: '#2563eb',
     strategyType: 'SMART',
     config: {
@@ -58,7 +58,7 @@ const SOLVENCY_PROFILES: Profile[] = [
         cashPledgeRatio: 0.95,
         maxLtv: 80,
         withdrawType: 'FIXED',
-        withdrawValue: 21000,
+        withdrawValue: 19000,
         inflationRate: 0,
         interestType: 'CAPITALIZED',
         ltvBasis: 'COLLATERAL',

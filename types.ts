@@ -2,8 +2,12 @@
 
 export interface MarketDataRow {
   date: string // ISO YYYY-MM-DD
-  qqq: number
-  qld: number
+  // Close prices - used for trade execution
+  qqqClose: number
+  qldClose: number
+  // Low prices - used for valuation and margin call detection
+  qqqLow: number
+  qldLow: number
 }
 
 export interface LeverageConfig {

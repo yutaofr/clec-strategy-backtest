@@ -69,9 +69,9 @@ export const FinancialReportModal: React.FC<FinancialReportModalProps> = ({ resu
             <div className="space-y-6">
               {balanceSheetHistory.map((state) => {
                 const qqqVal =
-                  state.shares.QQQ * (MARKET_DATA.find((m) => m.date === state.date)?.qqq || 0)
+                  state.shares.QQQ * (MARKET_DATA.find((m) => m.date === state.date)?.qqqClose || 0)
                 const qldVal =
-                  state.shares.QLD * (MARKET_DATA.find((m) => m.date === state.date)?.qld || 0)
+                  state.shares.QLD * (MARKET_DATA.find((m) => m.date === state.date)?.qldClose || 0)
                 const totalAssets = qqqVal + qldVal + state.cashBalance
 
                 return (
