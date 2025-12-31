@@ -17,6 +17,7 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
   // Add custom font for Chinese support
   doc.addFileToVFS('zpix.ttf', zpixFont)
   doc.addFont('zpix.ttf', 'zpix', 'normal')
+  doc.addFont('zpix.ttf', 'zpix', 'bold')
   const defaultFont = 'zpix'
 
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -126,7 +127,7 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
       fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { fontStyle: 'bold' },
+      0: { fontStyle: 'bold', font: defaultFont },
       1: { halign: 'right' },
       2: { halign: 'right' },
       3: { halign: 'right' },
