@@ -38,18 +38,19 @@ test.describe('Dynamic Chart Height', () => {
     await page.locator('button:has-text("Run Comparison")').last().click()
 
     // 7. Check new height
-    // 6 profiles: threshold=5, multiplier=20 -> 400 + (6-5)*20 = 420
+    // 6 user profiles + 2 benchmarks = 8 results
+    // threshold=5, multiplier=20 -> 400 + (8-5)*20 = 460
     const newHeight = await getChartHeight()
-    console.log(`New height with 6 profiles: ${newHeight}px`)
-    expect(newHeight).toBe(420)
+    console.log(`New height with 8 results (6 profiles + 2 benchmarks): ${newHeight}px`)
+    expect(newHeight).toBe(460)
 
-    // 8. One more profile for good measure (7 profiles)
+    // 8. One more profile for good measure (7 profiles + 2 benchmarks = 9 results)
     await page.getByTitle('Copy Profile').first().click()
     await page.locator('button:has-text("Done")').last().click()
     await page.locator('button:has-text("Run Comparison")').last().click()
 
     const finalHeight = await getChartHeight()
-    console.log(`Final height with 7 profiles: ${finalHeight}px`)
-    expect(finalHeight).toBe(440)
+    console.log(`Final height with 9 results: ${finalHeight}px`)
+    expect(finalHeight).toBe(480)
   })
 })

@@ -88,6 +88,7 @@ const MainApp = () => {
   const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES)
   const [results, setResults] = useState<SimulationResult[]>([])
   const [isCalculated, setIsCalculated] = useState(false)
+  const [showQQQBenchmark, setShowQQQBenchmark] = useState(false)
 
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
@@ -108,6 +109,35 @@ const MainApp = () => {
       return runBacktest(MARKET_DATA, strategyFunc, profile.config, profile.name, profile.color)
     })
 
+    // Add Benchmarks (based on the first profile's capital/contribution settings)
+    if (profiles.length > 0 && showQQQBenchmark) {
+      const baseConfig = profiles[0].config
+
+      // Benchmark: QQQ (Nasdaq 100)
+      const qqqConfig: AssetConfig = {
+        ...baseConfig,
+        qqqWeight: 100,
+        qldWeight: 0,
+        contributionQqqWeight: 100,
+        contributionQldWeight: 0,
+        leverage: {
+          ...baseConfig.leverage,
+          enabled: false, // Benchmarks are unleveraged
+        },
+      }
+
+      // Run Benchmarks (Only QQQ)
+      newResults.push(
+        runBacktest(
+          MARKET_DATA,
+          getStrategyByType('NO_REBALANCE'),
+          qqqConfig,
+          'Benchmark: QQQ',
+          '#64748b',
+        ), // Slate-500
+      )
+    }
+
     setResults(newResults)
     setIsCalculated(true)
 
@@ -115,7 +145,7 @@ const MainApp = () => {
     if (window.innerWidth < 1024) {
       setSidebarOpen(false)
     }
-  }, [profiles])
+  }, [profiles, showQQQBenchmark])
 
   useEffect(() => {
     handleRunSimulation()
@@ -240,6 +270,8 @@ const MainApp = () => {
               onRun={handleRunSimulation}
               onViewDetails={handleViewDetails}
               hasResults={isCalculated}
+              showBenchmark={showQQQBenchmark}
+              onShowBenchmarkChange={setShowQQQBenchmark}
             />
 
             <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">

@@ -178,6 +178,11 @@ const dictionaries: Record<Language, Translations> = {
     aiAnalysisNote: 'AI-Analysis Segment: The following data is structured for AI parsing.',
     legalDisclaimer:
       'Disclaimer: This report is for simulation purposes only. Past performance does not guarantee future results.',
+    dragToZoom: 'Drag to Zoom region',
+    resetZoom: 'Reset Zoom',
+    selectionMode: 'Selection Mode',
+    selectionModeActive: 'Precision Zoom Active',
+    showBenchmark: 'Show QQQ Benchmark',
   },
   fr: {
     appTitle: 'Backtesteur QQQ',
@@ -348,6 +353,11 @@ const dictionaries: Record<Language, Translations> = {
       "Segment d'analyse IA : Les données suivantes sont structurées pour l'analyse par IA.",
     legalDisclaimer:
       'Avertissement : Ce rapport est fourni à des fins de simulation uniquement. Les performances passées ne garantissent pas les résultats futurs.',
+    dragToZoom: 'Faites glisser pour zoomer',
+    resetZoom: 'Réinitialiser le zoom',
+    selectionMode: 'Mode Sélection',
+    selectionModeActive: 'Zoom de Précision Actif',
+    showBenchmark: 'Afficher le benchmark QQQ',
   },
   'zh-CN': {
     appTitle: 'QQQ 回测工具',
@@ -512,6 +522,11 @@ const dictionaries: Record<Language, Translations> = {
     aiAnalysisNote: 'AI 分析专用 segment：以下数据已为 AI 解析进行结构化处理。',
     legalDisclaimer:
       '风险提示：本报告仅供模拟参考，过往业绩不代表未来表现。投资有风险，入市需谨慎。',
+    dragToZoom: '按住并拖动以缩放',
+    resetZoom: '重置缩放',
+    selectionMode: '框选模式',
+    selectionModeActive: '精准缩放已开启',
+    showBenchmark: '显示 QQQ 基准线',
   },
   'zh-TW': {
     appTitle: 'QQQ 回測工具',
@@ -676,6 +691,11 @@ const dictionaries: Record<Language, Translations> = {
     aiAnalysisNote: 'AI 分析專用 segment：以下數據已為 AI 解析進行結構化處理。',
     legalDisclaimer:
       '風險提示：本報告僅供模擬參考，過往業績不代表未來表現。投資有風險，入市需謹慎。',
+    dragToZoom: '按住並拖動以縮放',
+    resetZoom: '重置縮放',
+    selectionMode: '框選模式',
+    selectionModeActive: '精準縮放已開啟',
+    showBenchmark: '顯示 QQQ 基準線',
   },
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { clsx } from 'clsx'
 import { SimulationResult } from '../types'
 import {
   ComposedChart,
@@ -13,6 +14,7 @@ import {
   Legend,
   BarChart,
   Bar,
+  ReferenceArea,
 } from 'recharts'
 import {
   TrendingUp,
@@ -29,6 +31,10 @@ import {
   ChevronDown,
   ArrowUpDown,
   FileDown,
+  ZoomIn,
+  RefreshCw,
+  BoxSelect,
+  MousePointer2,
 } from 'lucide-react'
 import { useTranslation } from '../services/i18n'
 import { MathModelModal } from './MathModelModal'
@@ -166,12 +172,61 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     setSortConfig({ key, direction })
   }
 
+  // Zoom State for Portfolio Growth Chart
+  const [zoomState, setZoomState] = useState<{ left: string | null; right: string | null }>({
+    left: null,
+    right: null,
+  })
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null)
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null)
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+
+  const handleZoom = () => {
+    if (refAreaLeft === refAreaRight || refAreaRight === null) {
+      setRefAreaLeft(null)
+      setRefAreaRight(null)
+      return
+    }
+
+    // Determine domain chronologically
+    let left = refAreaLeft!
+    let right = refAreaRight!
+
+    if (left > right) [left, right] = [right, left]
+
+    // Index gap threshold logic
+    const history = results[0].history
+    const indexL = history.findIndex((h) => h.date === left)
+    const indexR = history.findIndex((h) => h.date === right)
+    const gap = Math.abs(indexR - indexL)
+    const minGap = isSelectionMode ? 2 : 12
+
+    if (gap >= minGap) {
+      setZoomState({ left, right })
+    }
+
+    setRefAreaLeft(null)
+    setRefAreaRight(null)
+  }
+
+  const handleZoomOut = () => {
+    setZoomState({ left: null, right: null })
+  }
+
   // Move early return after hooks if possible, but sortedResults is a hook.
   // Best to return early with the same hook structure or just return the UI conditionally.
 
-  // Filter out bankrupt strategies for "Winning" logic to avoid skewing unless all are bankrupt
-  const activeResults = results.filter((r) => !r.isBankrupt)
-  const safeResults = activeResults.length > 0 ? activeResults : results
+  // Filter out benchmarks and bankrupt strategies for "Winning" logic
+  const nonBenchmarkResults = results.filter(
+    (r) => !r.strategyName.toLowerCase().includes('benchmark'),
+  )
+  const activeResults = nonBenchmarkResults.filter((r) => !r.isBankrupt)
+  const safeResults =
+    activeResults.length > 0
+      ? activeResults
+      : nonBenchmarkResults.length > 0
+        ? nonBenchmarkResults
+        : results
 
   // Calculate overall data max for Y-axis scaling
   const dataMaxVal = results.reduce(
@@ -179,10 +234,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     0,
   )
 
-  // Calculate a clean upper bound: 5% buffer, then round up to next 10k/25k/100k
-  const getCleanAxisConfig = (maxVal: number, targetTicks = 6) => {
-    const rawMax = maxVal > 0 ? maxVal * 1.05 : 1
-    const roughStep = rawMax / targetTicks
+  // Calculate a clean range: buffer on both ends, then round to clean steps
+  const getCleanAxisConfig = (minVal: number, maxVal: number, targetTicks = 6) => {
+    const range = Math.max(0.1, maxVal - minVal)
+    const rawMin = minVal - range * 0.05
+    const rawMax = maxVal + range * 0.05
+
+    // If min is very close to 0 (less than 10% of max), just start from 0 for cleaner look
+    const finalMin = rawMin < maxVal * 0.1 && rawMin >= 0 ? 0 : rawMin
+
+    const actualRange = rawMax - finalMin
+    const roughStep = actualRange / targetTicks
     const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)) || 0)
     const normalizedStep = roughStep / magnitude
 
@@ -191,17 +253,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     else if (normalizedStep > 2) cleanStep = 5 * magnitude
     else if (normalizedStep > 1) cleanStep = 2 * magnitude
 
-    const maxBound = Math.ceil(rawMax / cleanStep) * cleanStep
-    const ticks: number[] = [0]
-    let curr = cleanStep
-    while (curr < maxBound + cleanStep / 10) {
+    const cleanMin = Math.max(0, Math.floor(finalMin / cleanStep) * cleanStep)
+    const cleanMax = Math.ceil(rawMax / cleanStep) * cleanStep
+
+    const ticks: number[] = []
+    let curr = cleanMin
+    while (curr < cleanMax + cleanStep / 10) {
       ticks.push(Number(curr.toFixed(10))) // Avoid floating point issues
       curr += cleanStep
     }
-    return { step: cleanStep, maxBound, ticks }
+    return { step: cleanStep, minBound: cleanMin, maxBound: cleanMax, ticks }
   }
 
-  const growthConfig = getCleanAxisConfig(dataMaxVal)
+  const growthConfig = getCleanAxisConfig(0, dataMaxVal)
 
   if (typeof window !== 'undefined') {
     ;(window as unknown as { __CHART_GLOBAL_MAX: number }).__CHART_GLOBAL_MAX = dataMaxVal
@@ -219,6 +283,33 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     row['_yAnchor'] = growthConfig.maxBound
     return row
   })
+
+  // Visible Data based on Zoom
+  const visibleChartData = React.useMemo(() => {
+    const data =
+      !zoomState.left || !zoomState.right
+        ? chartData
+        : chartData.filter(
+            (d) => (d.date as string) >= zoomState.left! && (d.date as string) <= zoomState.right!,
+          )
+    return data
+  }, [chartData, zoomState])
+
+  // Local Y-Axis Config for Zoomed Data
+  const currentGrowthConfig = React.useMemo(() => {
+    if (!zoomState.left || !zoomState.right) return growthConfig
+
+    let max = -Infinity
+    let min = Infinity
+    visibleChartData.forEach((row) => {
+      results.forEach((res) => {
+        const val = Number(row[res.strategyName] || 0)
+        if (val > max) max = val
+        if (val < min) min = val
+      })
+    })
+    return getCleanAxisConfig(min, max)
+  }, [visibleChartData, results, growthConfig, zoomState])
 
   // Prepare Drawdown Data
   const drawdownData = results[0].history.map((h) => ({ date: h.date }))
@@ -367,12 +458,73 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       {/* Main Chart */}
       <div
         id="portfolio-growth-chart"
-        className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
+        className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-all"
       >
-        <h3 className="text-lg font-bold text-slate-800 mb-4">{t('portfolioGrowth')}</h3>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-slate-800">{t('portfolioGrowth')}</h3>
+            {isSelectionMode && (
+              <span className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold border border-amber-100 uppercase tracking-wider">
+                <BoxSelect className="w-3 h-3" /> {t('selectionModeActive')}
+              </span>
+            )}
+            {(zoomState.left || zoomState.right) && (
+              <span className="flex items-center gap-1 text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100 uppercase tracking-wider">
+                <ZoomIn className="w-3 h-3" /> Zoomed
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSelectionMode(!isSelectionMode)}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all rounded-lg border shadow-sm active:scale-95',
+                isSelectionMode
+                  ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50',
+              )}
+              title={t('selectionMode')}
+            >
+              {isSelectionMode ? (
+                <BoxSelect className="w-3.5 h-3.5" />
+              ) : (
+                <MousePointer2 className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">{t('selectionMode')}</span>
+            </button>
+            {(zoomState.left || zoomState.right) && (
+              <button
+                onClick={handleZoomOut}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 shadow-sm active:scale-95"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                {t('resetZoom') || 'Reset Zoom'}
+              </button>
+            )}
+            <p className="text-[10px] text-slate-400 font-medium hidden sm:block italic">
+              {t('dragToZoom') || 'Drag to Zoom region'}
+            </p>
+          </div>
+        </div>
         <div style={{ height: `${calculateChartHeight(400)}px` }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart
+              data={visibleChartData}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onMouseDown={(e: any) => e && setRefAreaLeft(e.activeLabel || null)}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onMouseMove={(e: any) => refAreaLeft && setRefAreaRight(e.activeLabel || null)}
+              onMouseUp={handleZoom}
+              {...({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onTouchStart: (e: any) => e && setRefAreaLeft(e.activeLabel || null),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onTouchMove: (e: any) => refAreaLeft && setRefAreaRight(e.activeLabel || null),
+                onTouchEnd: handleZoom,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              } as any)}
+              style={{ cursor: isSelectionMode ? 'crosshair' : 'default' }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis
                 dataKey="date"
@@ -384,8 +536,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tick={{ fontSize: 12 }}
                 stroke="#94a3b8"
                 tickFormatter={(val) => `$${val / 1000}k`}
-                domain={[0, growthConfig.maxBound]}
-                ticks={growthConfig.ticks}
+                domain={[currentGrowthConfig.minBound, currentGrowthConfig.maxBound]}
+                ticks={currentGrowthConfig.ticks}
                 interval={0}
                 allowDataOverflow={true}
               />
@@ -398,17 +550,31 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 dot={false}
                 activeDot={false}
                 legendType="none"
+                connectNulls
               />
-              {results.map((res) => (
-                <Line
-                  key={res.strategyName}
-                  type="monotone"
-                  dataKey={res.strategyName}
-                  stroke={res.color}
-                  strokeWidth={2.5}
-                  dot={false}
+              {results.map((res) => {
+                const isBenchmark = res.strategyName.toLowerCase().includes('benchmark')
+                return (
+                  <Line
+                    key={res.strategyName}
+                    type="monotone"
+                    dataKey={res.strategyName}
+                    stroke={isBenchmark ? '#cbd5e1' : res.color}
+                    strokeWidth={isBenchmark ? 1.5 : 2.5}
+                    strokeDasharray={isBenchmark ? '5 5' : undefined}
+                    dot={false}
+                  />
+                )
+              })}
+              {refAreaLeft && refAreaRight && (
+                <ReferenceArea
+                  x1={refAreaLeft}
+                  x2={refAreaRight}
+                  strokeOpacity={0.3}
+                  fill="#3b82f6"
+                  fillOpacity={0.1}
                 />
-              ))}
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -487,7 +653,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 unit="%"
                 domain={[
                   (dataMin: number) =>
-                    Math.max(-100, -getCleanAxisConfig(Math.abs(dataMin)).maxBound),
+                    Math.max(-100, -getCleanAxisConfig(0, Math.abs(dataMin)).maxBound),
                   0,
                 ]}
                 ticks={(() => {
@@ -500,7 +666,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                     }, 0)
                     return Math.min(min, m)
                   }, 0)
-                  const config = getCleanAxisConfig(Math.abs(dataMin))
+                  const config = getCleanAxisConfig(0, Math.abs(dataMin))
                   return config.ticks
                     .filter((t) => t <= 100)
                     .map((t) => -t)
@@ -510,16 +676,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               />
               <Tooltip content={<CustomTooltip formatType="percent" />} />
               <Legend />
-              {results.map((res) => (
-                <Line
-                  key={res.strategyName}
-                  type="monotone"
-                  dataKey={res.strategyName}
-                  stroke={res.color}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              ))}
+              {results.map((res) => {
+                const isBenchmark = res.strategyName.toLowerCase().includes('benchmark')
+                return (
+                  <Line
+                    key={res.strategyName}
+                    type="monotone"
+                    dataKey={res.strategyName}
+                    stroke={isBenchmark ? '#cbd5e1' : res.color}
+                    strokeWidth={isBenchmark ? 1.5 : 2}
+                    strokeDasharray={isBenchmark ? '5 5' : undefined}
+                    dot={false}
+                  />
+                )
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -549,30 +719,34 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 stroke="#94a3b8"
                 domain={[
                   0,
-                  (dataMax: number) => getCleanAxisConfig(Math.max(1, dataMax), 5).maxBound,
+                  (dataMax: number) => getCleanAxisConfig(0, Math.max(1, dataMax), 5).maxBound,
                 ]}
                 ticks={(() => {
                   const dataMax = results.reduce(
                     (max, res) => Math.max(max, ...res.history.map((h) => h.beta)),
                     0,
                   )
-                  return getCleanAxisConfig(Math.max(1, dataMax), 5).ticks
+                  return getCleanAxisConfig(0, Math.max(1, dataMax), 5).ticks
                 })()}
                 interval={0}
               />
               <Tooltip content={<CustomTooltip formatType="number" />} />
               <Legend />
-              {results.map((res) => (
-                <Line
-                  key={res.strategyName}
-                  type="monotone"
-                  dataKey={res.strategyName}
-                  stroke={res.color}
-                  strokeWidth={2}
-                  dot={false}
-                  name={`${res.strategyName} Beta`}
-                />
-              ))}
+              {results.map((res) => {
+                const isBenchmark = res.strategyName.toLowerCase().includes('benchmark')
+                return (
+                  <Line
+                    key={res.strategyName}
+                    type="monotone"
+                    dataKey={res.strategyName}
+                    stroke={isBenchmark ? '#cbd5e1' : res.color}
+                    strokeWidth={isBenchmark ? 1.5 : 2}
+                    strokeDasharray={isBenchmark ? '5 5' : undefined}
+                    dot={false}
+                    name={`${res.strategyName} Beta`}
+                  />
+                )
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -605,14 +779,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                   domain={[
                     0,
                     (dataMax: number) =>
-                      Math.min(100, getCleanAxisConfig(Math.max(10, dataMax), 5).maxBound),
+                      Math.min(100, getCleanAxisConfig(0, Math.max(10, dataMax), 5).maxBound),
                   ]}
                   ticks={(() => {
                     const dataMax = results.reduce(
                       (max, res) => Math.max(max, ...res.history.map((h) => h.ltv)),
                       0,
                     )
-                    const config = getCleanAxisConfig(Math.max(10, dataMax), 5)
+                    const config = getCleanAxisConfig(0, Math.max(10, dataMax), 5)
                     return config.ticks.filter((t) => t <= 100)
                   })()}
                   interval={0}
