@@ -227,7 +227,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     res.history.forEach((h, idx) => {
       if (h.totalValue > peak) peak = h.totalValue
       const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100
-      ;(drawdownData[idx] as Record<string, string | number>)[res.strategyName] = dd
+      // Clamp to -100% as you cannot lose more than 100% of peak
+      ;(drawdownData[idx] as Record<string, string | number>)[res.strategyName] = Math.max(-100, dd)
     })
   })
 
@@ -484,19 +485,26 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 tick={{ fontSize: 12 }}
                 stroke="#94a3b8"
                 unit="%"
-                domain={[(dataMin: number) => -getCleanAxisConfig(Math.abs(dataMin)).maxBound, 0]}
+                domain={[
+                  (dataMin: number) =>
+                    Math.max(-100, -getCleanAxisConfig(Math.abs(dataMin)).maxBound),
+                  0,
+                ]}
                 ticks={(() => {
                   const dataMin = results.reduce((min, res) => {
                     let peak = -Infinity
                     const m = res.history.reduce((low, h) => {
                       if (h.totalValue > peak) peak = h.totalValue
                       const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100
-                      return Math.min(low, dd)
+                      return Math.min(low, Math.max(-100, dd))
                     }, 0)
                     return Math.min(min, m)
                   }, 0)
                   const config = getCleanAxisConfig(Math.abs(dataMin))
-                  return config.ticks.map((t) => -t).reverse()
+                  return config.ticks
+                    .filter((t) => t <= 100)
+                    .map((t) => -t)
+                    .reverse()
                 })()}
                 interval={0}
               />
