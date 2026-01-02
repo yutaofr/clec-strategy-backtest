@@ -272,7 +272,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
       t('confirmAutoGenerate') || `This will generate ${totalCount} combinations. Continue?`
 
     if (window.confirm(confirmMsg)) {
-      onProfilesChange(generatedProfiles)
+      onProfilesChange((profiles) => [...profiles, ...generatedProfiles])
     }
   }
 
