@@ -4,6 +4,24 @@ import html2canvas from 'html2canvas'
 import { SimulationResult } from '../types'
 import { zpixFont } from './fontData'
 
+interface AIDataItem {
+  id: string
+  name: string
+  leveraged: boolean
+  bankrupt: boolean
+  metrics: {
+    finalBalance: number
+    cagr: number
+    irr: number
+    maxDrawdown: number
+    sharpeRatio: number
+    calmarRatio: number
+    painIndex: number
+    worstYearReturn: number
+    maxRecoveryMonths: number
+  }
+}
+
 // Extend jsPDF type for autotable
 declare module 'jspdf' {
   interface jsPDF {
@@ -12,6 +30,8 @@ declare module 'jspdf' {
 }
 
 export const generateProfessionalReport = async (results: SimulationResult[]) => {
+  const yieldToMain = () => new Promise((resolve) => setTimeout(resolve, 0))
+
   const doc = new jsPDF('p', 'mm', 'a4')
 
   // Add custom font for Chinese support
@@ -45,6 +65,8 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
 
   yPos = 45
 
+  await yieldToMain()
+
   // === EXECUTIVE SUMMARY ===
   doc.setTextColor(...textColor)
   doc.setFontSize(14)
@@ -52,7 +74,7 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
   doc.text('Executive Summary', margin, yPos)
   yPos += 8
 
-  // Find best performers for summary
+  // Find best performers for summary - small overhead but good to yield after
   const bestByBalance = [...results].sort(
     (a, b) => b.metrics.finalBalance - a.metrics.finalBalance,
   )[0]
@@ -77,6 +99,8 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
   })
   yPos += 5
 
+  await yieldToMain()
+
   // === PERFORMANCE METRICS TABLE ===
   doc.setTextColor(...textColor)
   doc.setFontSize(14)
@@ -95,16 +119,25 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
     'Pain Index',
   ]
 
-  const tableData = results.map((r) => [
-    r.strategyName,
-    `$${Math.round(r.metrics.finalBalance).toLocaleString()}`,
-    `${r.metrics.cagr.toFixed(2)}%`,
-    `${r.metrics.irr.toFixed(2)}%`,
-    `${r.metrics.maxDrawdown.toFixed(2)}%`,
-    r.metrics.sharpeRatio.toFixed(2),
-    r.metrics.calmarRatio.toFixed(2),
-    r.metrics.painIndex.toFixed(2),
-  ])
+  // Map data in chunks if large
+  const tableData: (string | number)[][] = []
+  const CHUNK_SIZE = 20
+  for (let i = 0; i < results.length; i += CHUNK_SIZE) {
+    const chunk = results.slice(i, i + CHUNK_SIZE)
+    chunk.forEach((r) => {
+      tableData.push([
+        r.strategyName,
+        `$${Math.round(r.metrics.finalBalance).toLocaleString()}`,
+        `${r.metrics.cagr.toFixed(2)}%`,
+        `${r.metrics.irr.toFixed(2)}%`,
+        `${r.metrics.maxDrawdown.toFixed(2)}%`,
+        r.metrics.sharpeRatio.toFixed(2),
+        r.metrics.calmarRatio.toFixed(2),
+        r.metrics.painIndex.toFixed(2),
+      ])
+    })
+    if (results.length > CHUNK_SIZE) await yieldToMain()
+  }
 
   autoTable(doc, {
     startY: yPos,
@@ -140,6 +173,7 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
   })
 
   yPos = doc.lastAutoTable.finalY + 15
+  await yieldToMain()
 
   // === CHART CAPTURES ===
   const captureChart = async (elementId: string, title: string): Promise<void> => {
@@ -147,12 +181,18 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
     if (!element) return
 
     try {
+      // Yield before capture
+      await yieldToMain()
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
       })
+
+      // Yield after canvas generation
+      await yieldToMain()
 
       const imgData = canvas.toDataURL('image/jpeg', 0.92)
       const imgWidth = pageWidth - 2 * margin
@@ -174,12 +214,14 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
       // Chart image
       doc.addImage(imgData, 'JPEG', margin, yPos, imgWidth, imgHeight)
       yPos += imgHeight + 10
+      // Yield after adding to document
+      await yieldToMain()
     } catch (err) {
       console.error(`Failed to capture chart ${elementId}:`, err)
     }
   }
 
-  // Capture available charts
+  // Capture available charts (already await each, yielding internally now)
   await captureChart('portfolio-growth-chart', 'Portfolio Growth Over Time')
   await captureChart('drawdown-chart', 'Historical Drawdown')
   await captureChart('beta-chart', 'Portfolio Beta Evolution')
@@ -201,41 +243,56 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
   doc.text('Structured JSON for automated analysis and AI processing', margin, 22)
 
   yPos = 35
+  await yieldToMain()
 
   // Prepare AI-friendly data with ASCII-safe identifiers
-  const aiData = results.map((r, idx) => ({
-    id: `strategy_${idx + 1}`,
-    name: r.strategyName,
-    leveraged: r.isLeveraged,
-    bankrupt: r.isBankrupt,
-    metrics: {
-      finalBalance: r.metrics.finalBalance,
-      cagr: r.metrics.cagr,
-      irr: r.metrics.irr,
-      maxDrawdown: r.metrics.maxDrawdown,
-      sharpeRatio: r.metrics.sharpeRatio,
-      calmarRatio: r.metrics.calmarRatio,
-      painIndex: r.metrics.painIndex,
-      worstYearReturn: r.metrics.worstYearReturn,
-      maxRecoveryMonths: r.metrics.maxRecoveryMonths,
-    },
-  }))
+  const aiData: AIDataItem[] = []
+  for (let i = 0; i < results.length; i += CHUNK_SIZE) {
+    const chunk = results.slice(i, i + CHUNK_SIZE)
+    chunk.forEach((r, idx) => {
+      aiData.push({
+        id: `strategy_${i + idx + 1}`,
+        name: r.strategyName,
+        leveraged: r.isLeveraged,
+        bankrupt: r.isBankrupt,
+        metrics: {
+          finalBalance: r.metrics.finalBalance,
+          cagr: r.metrics.cagr,
+          irr: r.metrics.irr,
+          maxDrawdown: r.metrics.maxDrawdown,
+          sharpeRatio: r.metrics.sharpeRatio,
+          calmarRatio: r.metrics.calmarRatio,
+          painIndex: r.metrics.painIndex,
+          worstYearReturn: r.metrics.worstYearReturn,
+          maxRecoveryMonths: r.metrics.maxRecoveryMonths,
+        },
+      })
+    })
+    await yieldToMain()
+  }
 
   doc.setFontSize(7)
   doc.setFont(defaultFont, 'normal')
   doc.setTextColor(71, 85, 105)
 
   const jsonStr = JSON.stringify(aiData, null, 2)
+  // SplitTextToSize can be heavy for huge strings
   const lines = doc.splitTextToSize(jsonStr, pageWidth - 2 * margin)
+  await yieldToMain()
 
-  lines.forEach((line: string) => {
+  // Render lines in chunks
+  const LINE_CHUNK = 50
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
     if (yPos > pageHeight - 20) {
       doc.addPage()
       yPos = 20
     }
     doc.text(line, margin, yPos)
     yPos += 3.5
-  })
+
+    if (i % LINE_CHUNK === 0) await yieldToMain()
+  }
 
   // === FOOTER (on last page) ===
   doc.setFontSize(7)
@@ -247,6 +304,8 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
     pageHeight - 10,
     { align: 'center' },
   )
+
+  await yieldToMain()
 
   // Save the PDF
   const dateStr = new Date().toISOString().split('T')[0]
