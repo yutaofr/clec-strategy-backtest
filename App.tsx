@@ -7,12 +7,19 @@ import { MARKET_DATA } from './constants'
 import { runBacktest } from './services/simulationEngine'
 import { getStrategyByType } from './services/strategies'
 import { AssetConfig, Profile, SimulationResult } from './types'
-import { LayoutDashboard, Settings2, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Settings2,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Activity,
+} from 'lucide-react'
 import { LanguageProvider, useTranslation, Language } from './services/i18n'
 
 const DEFAULT_CONFIG_A: AssetConfig = {
-  initialCapital: 10000,
-  contributionAmount: 500,
+  initialCapital: 1000000,
+  contributionAmount: 5000, // Adjusted relative to 1M capital
   contributionIntervalMonths: 1,
   yearlyContributionMonth: 12, // Default to December
   qqqWeight: 50,
@@ -34,13 +41,13 @@ const DEFAULT_CONFIG_A: AssetConfig = {
     interestType: 'CAPITALIZED',
     ltvBasis: 'TOTAL_ASSETS',
   },
-  annualExpenseAmount: 200,
+  annualExpenseAmount: 30000,
   cashCoverageYears: 15,
 }
 
 const DEFAULT_CONFIG_B: AssetConfig = {
-  initialCapital: 10000,
-  contributionAmount: 500,
+  initialCapital: 1000000,
+  contributionAmount: 5000,
   contributionIntervalMonths: 1,
   yearlyContributionMonth: 12, // Default to December
   qqqWeight: 10,
@@ -62,7 +69,7 @@ const DEFAULT_CONFIG_B: AssetConfig = {
     interestType: 'CAPITALIZED',
     ltvBasis: 'TOTAL_ASSETS',
   },
-  annualExpenseAmount: 200,
+  annualExpenseAmount: 30000,
   cashCoverageYears: 15,
 }
 
@@ -89,6 +96,7 @@ const MainApp = () => {
   const [results, setResults] = useState<SimulationResult[]>([])
   const [isCalculated, setIsCalculated] = useState(false)
   const [showQQQBenchmark, setShowQQQBenchmark] = useState(false)
+  const [isCalculating, setIsCalculating] = useState(false)
 
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
@@ -104,47 +112,58 @@ const MainApp = () => {
   }, [])
 
   const handleRunSimulation = useCallback(() => {
-    const newResults = profiles.map((profile) => {
-      const strategyFunc = getStrategyByType(profile.strategyType)
-      return runBacktest(MARKET_DATA, strategyFunc, profile.config, profile.name, profile.color)
-    })
+    setIsCalculating(true)
 
-    // Add Benchmarks (based on the first profile's capital/contribution settings)
-    if (profiles.length > 0 && showQQQBenchmark) {
-      const baseConfig = profiles[0].config
+    // Using setTimeout to allow UI to render the "Calculating" state before heavy CPU task
+    setTimeout(() => {
+      const newResults = []
 
-      // Benchmark: QQQ (Nasdaq 100)
-      const qqqConfig: AssetConfig = {
-        ...baseConfig,
-        qqqWeight: 100,
-        qldWeight: 0,
-        contributionQqqWeight: 100,
-        contributionQldWeight: 0,
-        leverage: {
-          ...baseConfig.leverage,
-          enabled: false, // Benchmarks are unleveraged
-        },
+      // 1. Run Strategy Backtests
+      profiles.forEach((profile) => {
+        const strategyFunc = getStrategyByType(profile.strategyType)
+        newResults.push(
+          runBacktest(MARKET_DATA, strategyFunc, profile.config, profile.name, profile.color),
+        )
+      })
+
+      // 2. Add Benchmarks (based on the first profile's capital/contribution settings)
+      if (profiles.length > 0 && showQQQBenchmark) {
+        const baseConfig = profiles[0].config
+
+        // Benchmark: QQQ (Nasdaq 100)
+        const qqqConfig: AssetConfig = {
+          ...baseConfig,
+          qqqWeight: 100,
+          qldWeight: 0,
+          contributionQqqWeight: 100,
+          contributionQldWeight: 0,
+          leverage: {
+            ...baseConfig.leverage,
+            enabled: false, // Benchmarks are unleveraged
+          },
+        }
+
+        // Run Benchmarks (Only QQQ)
+        newResults.push(
+          runBacktest(
+            MARKET_DATA,
+            getStrategyByType('NO_REBALANCE'),
+            qqqConfig,
+            'Benchmark: QQQ',
+            '#64748b',
+          ), // Slate-500
+        )
       }
 
-      // Run Benchmarks (Only QQQ)
-      newResults.push(
-        runBacktest(
-          MARKET_DATA,
-          getStrategyByType('NO_REBALANCE'),
-          qqqConfig,
-          'Benchmark: QQQ',
-          '#64748b',
-        ), // Slate-500
-      )
-    }
+      setResults(newResults)
+      setIsCalculated(true)
+      setIsCalculating(false)
 
-    setResults(newResults)
-    setIsCalculated(true)
-
-    // Auto close on mobile only
-    if (window.innerWidth < 1024) {
-      setSidebarOpen(false)
-    }
+      // Auto close on mobile only
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false)
+      }
+    }, 100) // Small delay to yield to UI thread
   }, [profiles, showQQQBenchmark])
 
   useEffect(() => {
@@ -214,6 +233,22 @@ const MainApp = () => {
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
+      )}
+
+      {/* Calculating Overlay */}
+      {isCalculating && (
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-[2px] z-[100] flex flex-col items-center justify-center">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl border border-slate-100 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+              <Activity className="absolute inset-0 m-auto w-6 h-6 text-blue-600 animate-pulse" />
+            </div>
+            <div className="text-center">
+              <h3 className="font-bold text-slate-800 text-lg">{t('calculating')}</h3>
+              <p className="text-sm text-slate-400 mt-1">{t('calculationDesc')}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Sidebar Container */}

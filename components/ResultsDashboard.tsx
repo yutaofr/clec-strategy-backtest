@@ -149,6 +149,34 @@ const CustomTooltip = ({
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) => {
   const { t } = useTranslation()
+  const isLargeSet = results.length > 50
+
+  const chartResults = React.useMemo(() => {
+    if (!isLargeSet) return results
+
+    // 1. Keep all benchmarks
+    const benchmarks = results.filter((r) => r.strategyName.toLowerCase().includes('benchmark'))
+
+    // 2. Get strategies
+    const strategies = results.filter((r) => !r.strategyName.toLowerCase().includes('benchmark'))
+
+    // 3. Select Top 10 by CAGR
+    const topCAGR = [...strategies].sort((a, b) => b.metrics.cagr - a.metrics.cagr).slice(0, 10)
+
+    // 4. Select Bottom 5 by Max Drawdown (worst performers)
+    const worstMDD = [...strategies]
+      .filter((s) => !topCAGR.find((t) => t.strategyName === s.strategyName))
+      .sort((a, b) => b.metrics.maxDrawdown - a.metrics.maxDrawdown) // Higher MDD is worse
+      .slice(0, 5)
+
+    // Combine and ensure uniqueness
+    const combined = [...benchmarks, ...topCAGR, ...worstMDD]
+    const uniqueChartResults = Array.from(
+      new Map(combined.map((item) => [item.strategyName, item])).values(),
+    )
+
+    return uniqueChartResults
+  }, [results, isLargeSet])
 
   // Dynamic height calculation based on profile count to prevent chart compression
   const calculateChartHeight = (baseHeight: number) => {
@@ -552,7 +580,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                 legendType="none"
                 connectNulls
               />
-              {results.map((res) => {
+              {refAreaLeft && refAreaRight && (
+                <ReferenceArea
+                  x1={refAreaLeft}
+                  x2={refAreaRight}
+                  strokeOpacity={0.3}
+                  fill="#3b82f6"
+                  fillOpacity={0.1}
+                />
+              )}
+              {chartResults.map((res) => {
                 const isBenchmark = res.strategyName.toLowerCase().includes('benchmark')
                 return (
                   <Line
@@ -563,21 +600,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                     strokeWidth={isBenchmark ? 1.5 : 2.5}
                     strokeDasharray={isBenchmark ? '5 5' : undefined}
                     dot={false}
+                    isAnimationActive={!isLargeSet}
                   />
                 )
               })}
-              {refAreaLeft && refAreaRight && (
-                <ReferenceArea
-                  x1={refAreaLeft}
-                  x2={refAreaRight}
-                  strokeOpacity={0.3}
-                  fill="#3b82f6"
-                  fillOpacity={0.1}
-                />
-              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
+        {isLargeSet && (
+          <p className="text-[10px] text-slate-400 mt-2 text-center">
+            {t('largeSetWarning') ||
+              'Displaying Top 10 + Bottom 5 strategies for optimal performance.'}
+          </p>
+        )}
       </div>
 
       {/* Annual Returns Chart */}
@@ -588,7 +623,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
             <BarChart
               data={(() => {
                 const yearMap: { [year: string]: Record<string, number | string> } = {}
-                results.forEach((res) => {
+                chartResults.forEach((res) => {
                   const annuals = res.history.reduce(
                     (acc: Record<string, { start: number; end: number }>, h, idx) => {
                       const year = h.date.substring(0, 4)
@@ -617,13 +652,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               <XAxis dataKey="year" tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" />
               <Tooltip content={<CustomTooltip formatType="percent" />} />
-              <Legend />
-              {results.map((res) => (
+              <Legend iconType="circle" />
+              {chartResults.map((res) => (
                 <Bar
                   key={res.strategyName}
                   dataKey={res.strategyName}
                   fill={res.color}
                   radius={[4, 4, 0, 0]}
+                  isAnimationActive={!isLargeSet}
                 />
               ))}
             </BarChart>
@@ -676,7 +712,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               />
               <Tooltip content={<CustomTooltip formatType="percent" />} />
               <Legend />
-              {results.map((res) => {
+              {chartResults.map((res) => {
                 const isBenchmark = res.strategyName.toLowerCase().includes('benchmark')
                 return (
                   <Line
@@ -687,6 +723,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                     strokeWidth={isBenchmark ? 1.5 : 2}
                     strokeDasharray={isBenchmark ? '5 5' : undefined}
                     dot={false}
+                    isAnimationActive={!isLargeSet}
                   />
                 )
               })}
@@ -732,7 +769,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
               />
               <Tooltip content={<CustomTooltip formatType="number" />} />
               <Legend />
-              {results.map((res) => {
+              {chartResults.map((res) => {
                 const isBenchmark = res.strategyName.toLowerCase().includes('benchmark')
                 return (
                   <Line
@@ -744,6 +781,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                     strokeDasharray={isBenchmark ? '5 5' : undefined}
                     dot={false}
                     name={`${res.strategyName} Beta`}
+                    isAnimationActive={!isLargeSet}
                   />
                 )
               })}
@@ -793,8 +831,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                   allowDataOverflow={false}
                 />
                 <Tooltip content={<CustomTooltip formatType="percent" />} />
-                <Legend />
-                {leveragedProfiles.map((res) => (
+                <Legend iconType="circle" />
+                {chartResults.map((res) => (
                   <Line
                     key={res.strategyName}
                     type="monotone"
@@ -803,6 +841,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
                     strokeWidth={2}
                     dot={false}
                     name={`${res.strategyName} LTV`}
+                    isAnimationActive={!isLargeSet}
                   />
                 ))}
               </LineChart>

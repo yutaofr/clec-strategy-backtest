@@ -19,6 +19,7 @@ import {
   Download,
   Upload,
   Copy,
+  Sparkles,
 } from 'lucide-react'
 import { useTranslation } from '../services/i18n'
 
@@ -157,6 +158,122 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
     onProfilesChange([...profiles, newProfile])
     setEditingProfileId(newId)
+  }
+
+  const handleAutoGenerate = () => {
+    if (profiles.length === 0) return
+
+    // Base template from first profile
+    const baseConfig = profiles[0].config
+
+    // User's defined ratios (QQQ-QLD-Cash)
+    const candidates = [
+      { q: 10, l: 0, c: 0, name: 'Full QQQ' },
+      { q: 9, l: 0, c: 1, name: '901' },
+      { q: 9, l: 1, c: 0, name: '910' },
+      { q: 8, l: 1, c: 1, name: '811' },
+      { q: 8, l: 0, c: 2, name: '802' },
+      { q: 8, l: 2, c: 0, name: '820' },
+      { q: 7, l: 1, c: 2, name: '712' },
+      { q: 7, l: 2, c: 1, name: '721' },
+      { q: 7, l: 0, c: 3, name: '703' },
+      { q: 7, l: 3, c: 0, name: '730' },
+      { q: 6, l: 2, c: 2, name: '622' },
+      { q: 6, l: 1, c: 3, name: '613' },
+      { q: 6, l: 3, c: 1, name: '631' },
+      { q: 6, l: 0, c: 4, name: '604' },
+      { q: 6, l: 4, c: 0, name: '640' },
+      { q: 5, l: 2, c: 3, name: '523' },
+      { q: 5, l: 1, c: 4, name: '514' },
+      { q: 5, l: 4, c: 1, name: '541' },
+      { q: 5, l: 0, c: 5, name: '505' },
+      { q: 5, l: 5, c: 0, name: '550' },
+      { q: 5, l: 3, c: 2, name: '532' },
+      { q: 4, l: 3, c: 3, name: '433' },
+      { q: 4, l: 4, c: 2, name: '442' },
+      { q: 4, l: 5, c: 1, name: '451' },
+      { q: 4, l: 1, c: 5, name: '415' },
+      { q: 4, l: 2, c: 4, name: '424' },
+      { q: 4, l: 0, c: 6, name: '406' },
+      { q: 4, l: 6, c: 0, name: '460' },
+    ]
+
+    const strategies: { type: StrategyType; label: string }[] = [
+      { type: 'NO_REBALANCE', label: 'Hold' },
+      { type: 'REBALANCE', label: 'Reb' },
+      { type: 'SMART', label: 'Smart' },
+      { type: 'FLEXIBLE_1', label: 'Flex1' },
+      { type: 'FLEXIBLE_2', label: 'Flex2' },
+    ]
+
+    const generatedProfiles: Profile[] = []
+
+    // Color palette helper
+    const COLORS = [
+      '#2563eb',
+      '#dc2626',
+      '#16a34a',
+      '#d97706',
+      '#9333ea',
+      '#0891b2',
+      '#be123c',
+      '#4d7c0f',
+      '#854d0e',
+      '#3730a3',
+      '#0f766e',
+      '#9f1239',
+      '#15803d',
+      '#a16207',
+      '#5b21b6',
+      '#0e7490',
+      '#be185d',
+      '#3f6212',
+      '#713f12',
+      '#4338ca',
+    ]
+    let colorIdx = 0
+    const getNextColor = () => COLORS[colorIdx++ % COLORS.length]
+
+    const hasDca = baseConfig.contributionAmount > 0
+    const dcaList = hasDca ? candidates : [{ q: 0, l: 0, name: '' }]
+
+    // Generate combinations: (Initial Ratio) x (DCA Ratio) x (Strategy)
+    for (const init of candidates) {
+      for (const dca of dcaList) {
+        for (const strat of strategies) {
+          const profileName = hasDca
+            ? `${init.name}-${dca.name}-${strat.label}`
+            : `${init.name}-${strat.label}`
+
+          generatedProfiles.push({
+            id: profileName,
+            name: profileName,
+            color: getNextColor(),
+            strategyType: strat.type,
+            config: {
+              ...baseConfig,
+              // Initial Allocation
+              qqqWeight: init.q * 10,
+              qldWeight: init.l * 10,
+              // DCA Allocation
+              contributionQqqWeight: dca.q * 10,
+              contributionQldWeight: dca.l * 10,
+              // Use seed values if available, otherwise fallback to defaults
+              annualExpenseAmount: baseConfig.annualExpenseAmount ?? 30000,
+              cashCoverageYears: baseConfig.cashCoverageYears ?? 15,
+            },
+          })
+        }
+      }
+    }
+
+    const totalCount = generatedProfiles.length
+    const confirmMsg =
+      t('confirmAutoGenerate') || `This will generate ${totalCount} combinations. Continue?`
+
+    if (window.confirm(confirmMsg)) {
+      onProfilesChange(generatedProfiles)
+    }
   }
 
   const updateProfile = (id: string, updates: Partial<Profile> | Partial<AssetConfig>) => {
@@ -880,6 +997,14 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             </div>
           </div>
         ))}
+
+        <button
+          onClick={handleAutoGenerate}
+          className="w-full py-3 mb-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+          title="Generate combinations based on the first profile"
+        >
+          <Sparkles className="w-5 h-5" /> {t('autoGenerate') || 'Auto Generate Combinations'}
+        </button>
 
         <button
           onClick={handleAddProfile}

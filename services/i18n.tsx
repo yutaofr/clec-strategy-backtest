@@ -11,6 +11,9 @@ const dictionaries: Record<Language, Translations> = {
     // Config Panel
     profiles: 'Profiles',
     addProfile: 'Add Profile',
+    autoGenerate: 'Auto Generate Combinations',
+    confirmAutoGenerate:
+      'This will replace all current profiles with auto-generated combinations based on the first profile. Continue?',
     copyPrefix: 'Copy- ',
     copyProfile: 'Copy Profile',
     deleteProfile: 'Delete Profile',
@@ -183,11 +186,17 @@ const dictionaries: Record<Language, Translations> = {
     selectionMode: 'Selection Mode',
     selectionModeActive: 'Precision Zoom Active',
     showBenchmark: 'Show QQQ Benchmark',
+    calculating: 'Calculating...',
+    calculationDesc: 'Running simulation for 400+ combinations',
+    largeSetWarning: 'Displaying Top 10 + Bottom 5 strategies for optimal performance.',
   },
   fr: {
     appTitle: 'Backtesteur QQQ',
     profiles: 'Profils',
     addProfile: 'Ajouter un profil',
+    autoGenerate: 'Générer Combinaisons',
+    confirmAutoGenerate:
+      'Cela remplacera tous les profils actuels par des combinaisons générées automatiquement basées sur le premier profil. Continuer ?',
     copyPrefix: 'Copie- ',
     copyProfile: 'Copier le profil',
     deleteProfile: 'Supprimer le profil',
@@ -358,11 +367,17 @@ const dictionaries: Record<Language, Translations> = {
     selectionMode: 'Mode Sélection',
     selectionModeActive: 'Zoom de Précision Actif',
     showBenchmark: 'Afficher le benchmark QQQ',
+    calculating: 'Calcul en cours...',
+    calculationDesc: 'Simulation de plus de 400 combinaisons',
+    largeSetWarning:
+      'Affichage des 10 meilleurs + 5 moins bons profils pour des performances optimales.',
   },
   'zh-CN': {
     appTitle: 'QQQ 回测工具',
     profiles: '配置方案',
     addProfile: '添加方案',
+    autoGenerate: '自动生成组合',
+    confirmAutoGenerate: '这将根据第一个方案自动生成组合并替换当前所有方案。是否继续？',
     copyPrefix: '复制-',
     copyProfile: '复制配置方案',
     deleteProfile: '删除配置方案',
@@ -527,11 +542,16 @@ const dictionaries: Record<Language, Translations> = {
     selectionMode: '框选模式',
     selectionModeActive: '精准缩放已开启',
     showBenchmark: '显示 QQQ 基准线',
+    calculating: '正在计算中...',
+    calculationDesc: '正在为 400 多个组合运行回测模拟',
+    largeSetWarning: '为保证性能，图表仅展示排名靠前的 10 个及回撤最大的 5 个方案。',
   },
   'zh-TW': {
     appTitle: 'QQQ 回測工具',
     profiles: '配置方案',
     addProfile: '新增方案',
+    autoGenerate: '自動生成組合',
+    confirmAutoGenerate: '這將根據第一個方案自動生成組合並替換當前所有方案。是否繼續？',
     copyPrefix: '複製-',
     copyProfile: '複製配置方案',
     deleteProfile: '刪除配置方案',
@@ -696,6 +716,9 @@ const dictionaries: Record<Language, Translations> = {
     selectionMode: '框選模式',
     selectionModeActive: '精準縮放已開啟',
     showBenchmark: '顯示 QQQ 基準線',
+    calculating: '正在計算中...',
+    calculationDesc: '正在為 400 多個組合運行回測模擬',
+    largeSetWarning: '為保證性能，圖表僅展示排名靠前的 10 個及回撤最大的 5 個方案。',
   },
 }
 
