@@ -6,3 +6,10 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+/* Ensure action ribbon is visible on touch devices */
+@media (hover: none) {
+  .group .opacity-0 {
+    opacity: 1 !important;
+  }
+}

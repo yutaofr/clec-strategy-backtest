@@ -160,11 +160,9 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     setEditingProfileId(newId)
   }
 
-  const handleAutoGenerate = () => {
-    if (profiles.length === 0) return
-
-    // Base template from first profile
-    const baseConfig = profiles[0].config
+  const handleAutoGenerate = (baseProfile: Profile) => {
+    // Base template from the passed profile
+    const baseConfig = baseProfile.config
 
     // User's defined ratios (QQQ-QLD-Cash)
     const candidates = [
@@ -272,7 +270,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
       t('confirmAutoGenerate') || `This will generate ${totalCount} combinations. Continue?`
 
     if (window.confirm(confirmMsg)) {
-      onProfilesChange((profiles) => [...profiles, ...generatedProfiles])
+      onProfilesChange((prev) => [...prev, ...generatedProfiles])
     }
   }
 
@@ -922,29 +920,15 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           <div
             key={profile.id}
             onClick={() => setEditingProfileId(profile.id)}
-            className="group relative p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
+            className="group relative rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white overflow-hidden"
+            style={{ borderLeft: `4px solid ${profile.color}` }}
           >
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: profile.color }}
-                ></span>
-                <span className="font-bold text-slate-800 text-sm">{profile.name}</span>
+            {/* Header: Name and Management Actions */}
+            <div className="flex justify-between items-center px-4 pt-3 mb-1">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <span className="font-bold text-slate-800 text-sm truncate">{profile.name}</span>
               </div>
-              <div className="flex gap-1">
-                {hasResults && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onViewDetails(profile.id)
-                    }}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    title={t('viewDetails')}
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                )}
+              <div className="flex gap-0.5">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -953,58 +937,100 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   title={t('editProfile')}
                 >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => handleCopyProfile(e, profile)}
-                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95"
-                  title={t('copyProfile')}
-                >
-                  <Copy className="w-4 h-4" />
+                  <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={(e) => handleDeleteProfile(e, profile.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all active:scale-95"
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                   title={t('deleteProfile')}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            <div className="text-xs text-slate-500 mb-3">
-              {getStrategyLabel(profile.strategyType)}
+            {/* Content: Strategy and Allocation details */}
+            <div className="px-4 pb-3">
+              <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">
+                {getStrategyLabel(profile.strategyType)}
+              </div>
+
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 items-center">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                  <span className="text-slate-400 font-sans uppercase text-[9px]">Init</span>
+                  <div className="flex bg-slate-50 rounded border border-slate-100 divide-x divide-slate-100 overflow-hidden">
+                    <span className="px-1.5 py-0.5 text-blue-600 font-bold">
+                      {profile.config.qqqWeight}
+                    </span>
+                    <span className="px-1.5 py-0.5 text-purple-600 font-bold">
+                      {profile.config.qldWeight}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                  <span className="text-slate-400 font-sans uppercase text-[9px]">DCA</span>
+                  <div className="flex bg-slate-50 rounded border border-slate-100 divide-x divide-slate-100 overflow-hidden text-slate-500">
+                    <span className="px-1.5 py-0.5">{profile.config.contributionQqqWeight}</span>
+                    <span className="px-1.5 py-0.5 text-purple-400">
+                      {profile.config.contributionQldWeight}
+                    </span>
+                  </div>
+                </div>
+
+                {profile.config.leverage?.enabled && (
+                  <div className="flex items-center gap-1 text-[10px] font-mono text-yellow-700 bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-100">
+                    <Landmark className="w-3 h-3" />
+                    <span>{profile.config.leverage.maxLtv}%</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <div className="flex gap-2 text-[10px] font-mono text-slate-600 items-center">
-                <span className="text-slate-400 w-8">Init:</span>
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                  Q:{profile.config.qqqWeight}
-                </span>
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-                  2x:{profile.config.qldWeight}
-                </span>
+            {/* Footer: Action Ribbon */}
+            <div
+              className={`flex items-center justify-between border-t border-slate-50 bg-slate-50/50 px-2 py-1 transition-opacity ${
+                editingProfileId === profile.id
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100'
+              }`}
+            >
+              <div className="flex gap-1">
+                {hasResults && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onViewDetails(profile.id)
+                    }}
+                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-white rounded shadow-sm transition-all text-[10px] font-bold flex items-center gap-1"
+                    title={t('viewDetails')}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    {t('details')}
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAutoGenerate(profile)
+                  }}
+                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded shadow-sm transition-all text-[10px] font-bold flex items-center gap-1"
+                  title={t('autoGenerate')}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {t('generate')}
+                </button>
               </div>
-              {profile.config.leverage?.enabled && (
-                <div className="flex gap-2 text-[10px] font-mono text-yellow-700 items-center mt-1">
-                  <Landmark className="w-3 h-3" />
-                  <span className="bg-yellow-100 px-2 py-0.5 rounded">
-                    LTV: {profile.config.leverage.maxLtv}%
-                  </span>
-                </div>
-              )}
+              <button
+                onClick={(e) => handleCopyProfile(e, profile)}
+                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-white rounded shadow-sm transition-all"
+                title={t('copyProfile')}
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ))}
-
-        <button
-          onClick={handleAutoGenerate}
-          className="w-full py-3 mb-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
-          title="Generate combinations based on the first profile"
-        >
-          <Sparkles className="w-5 h-5" /> {t('autoGenerate') || 'Auto Generate Combinations'}
-        </button>
 
         <button
           onClick={handleAddProfile}
