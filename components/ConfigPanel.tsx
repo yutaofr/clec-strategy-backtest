@@ -85,6 +85,14 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 }) => {
   const { t } = useTranslation()
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null)
+  const [hasChanged, setHasChanged] = useState(false)
+
+  // Reset change tracker when starting to edit a new profile
+  React.useEffect(() => {
+    if (editingProfileId) {
+      setHasChanged(false)
+    }
+  }, [editingProfileId])
 
   const STRATEGY_OPTIONS: { value: StrategyType; label: string }[] = [
     { value: 'NO_REBALANCE', label: t('strat_noRebalance') },
@@ -288,6 +296,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         return { ...p, ...updates }
       }),
     )
+    setHasChanged(true)
   }
   const updateLeverage = (id: string, updates: Partial<AssetConfig['leverage']>) => {
     onProfilesChange((prevProfiles) =>
@@ -302,6 +311,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         }
       }),
     )
+    setHasChanged(true)
   }
 
   const handleExport = () => {
@@ -902,7 +912,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           </div>
 
           <button
-            onClick={() => setEditingProfileId(null)}
+            onClick={() => {
+              setEditingProfileId(null)
+              if (hasChanged) {
+                onRun()
+              }
+            }}
             className="w-full py-2 bg-slate-800 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-900 mt-4"
           >
             <Check className="w-4 h-4" /> {t('done')}

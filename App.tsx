@@ -16,6 +16,7 @@ import {
   Activity,
 } from 'lucide-react'
 import { LanguageProvider, useTranslation, Language } from './services/i18n'
+import { version } from './package.json'
 
 const DEFAULT_CONFIG_A: AssetConfig = {
   initialCapital: 1000000,
@@ -240,7 +241,12 @@ const MainApp = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LayoutDashboard className="text-blue-600" />
-            <h1 className="font-bold text-lg">{t('appTitle')}</h1>
+            <h1 className="font-bold text-lg">
+              {t('appTitle')}
+              <span className="ml-1 text-[10px] font-mono text-slate-400 font-normal">
+                v{version}
+              </span>
+            </h1>
           </div>
 
           <button
@@ -312,7 +318,12 @@ const MainApp = () => {
           <div className="hidden lg:flex justify-between items-center">
             <div className="flex items-center gap-2">
               <LayoutDashboard className="text-blue-600 w-6 h-6" />
-              <h1 className="font-bold text-xl tracking-tight text-slate-800">{t('appTitle')}</h1>
+              <h1 className="font-bold text-xl tracking-tight text-slate-800">
+                {t('appTitle')}
+                <span className="ml-2 text-xs font-mono text-slate-400 font-normal tracking-normal">
+                  v{version}
+                </span>
+              </h1>
             </div>
 
             {/* Desktop Collapse Button */}
