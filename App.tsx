@@ -92,17 +92,33 @@ const INITIAL_PROFILES: Profile[] = [
 
 const MainApp = () => {
   const { t, language, setLanguage } = useTranslation()
-  const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES)
+  const [profiles, setProfiles] = useState<Profile[]>(() => {
+    const saved = localStorage.getItem('app_profiles')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse saved profiles:', e)
+      }
+    }
+    return INITIAL_PROFILES
+  })
   const [results, setResults] = useState<SimulationResult[]>([])
   const [isCalculated, setIsCalculated] = useState(false)
-  const [showQQQBenchmark, setShowQQQBenchmark] = useState(false)
+  const [showQQQBenchmark, setShowQQQBenchmark] = useState<boolean>(() => {
+    const saved = localStorage.getItem('app_show_benchmark')
+    return saved === 'true'
+  })
   const [isCalculating, setIsCalculating] = useState(false)
 
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
 
   // Sidebar state
-  const [isSidebarOpen, setSidebarOpen] = useState(true)
+  const [isSidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('app_sidebar_open')
+    return saved !== null ? saved === 'true' : true
+  })
 
   // Auto-collapse on small screens initially
   useEffect(() => {
@@ -110,6 +126,26 @@ const MainApp = () => {
       setSidebarOpen(false)
     }
   }, [])
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('app_profiles', JSON.stringify(profiles))
+  }, [profiles])
+
+  useEffect(() => {
+    localStorage.setItem('app_show_benchmark', String(showQQQBenchmark))
+  }, [showQQQBenchmark])
+
+  useEffect(() => {
+    localStorage.setItem('app_sidebar_open', String(isSidebarOpen))
+  }, [isSidebarOpen])
+
+  useEffect(() => {
+    if (profiles.length === 0) {
+      setResults([])
+      setIsCalculated(false)
+    }
+  }, [profiles])
 
   const handleRunSimulation = useCallback(() => {
     setIsCalculating(true)
@@ -128,7 +164,9 @@ const MainApp = () => {
 
       // 2. Add Benchmarks (based on the first profile's capital/contribution settings)
       if (profiles.length > 0 && showQQQBenchmark) {
-        const baseConfig = profiles[0].config
+        const firstProfile = profiles[0]
+        if (!firstProfile) return
+        const baseConfig = firstProfile.config
 
         // Benchmark: QQQ (Nasdaq 100)
         const qqqConfig: AssetConfig = {
@@ -332,7 +370,7 @@ const MainApp = () => {
           </button>
         </div>
 
-        {isCalculated ? (
+        {isCalculated && results.length > 0 ? (
           <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
             <div className="mb-6 hidden lg:block">
               <h2 className="text-2xl font-bold text-slate-800">{t('simulationResults')}</h2>
@@ -344,7 +382,7 @@ const MainApp = () => {
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-slate-400">
-            {t('runComparison')}
+            {profiles.length === 0 ? t('addProfile') : t('runComparison')}
           </div>
         )}
       </main>

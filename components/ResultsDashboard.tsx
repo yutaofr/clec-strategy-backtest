@@ -223,7 +223,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     if (left > right) [left, right] = [right, left]
 
     // Index gap threshold logic
-    const history = results[0].history
+    const firstResult = results[0]
+    if (!firstResult) return
+    const history = firstResult.history
     const indexL = history.findIndex((h) => h.date === left)
     const indexR = history.findIndex((h) => h.date === right)
     const gap = Math.abs(indexR - indexL)
@@ -300,17 +302,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
   }
 
   // Prepare Chart Data (Growth)
-  const chartData = results[0].history.map((_, idx) => {
-    const row: Record<string, string | number> = { date: results[0].history[idx].date }
-    results.forEach((res) => {
-      // If history stops early (due to bankruptcy optimization), use 0 or last val
-      const val = res.history[idx]?.totalValue ?? 0
-      row[res.strategyName] = val
+  const chartData = React.useMemo(() => {
+    if (!results || results.length === 0 || !results[0]) return []
+    return results[0].history.map((_, idx) => {
+      const row: Record<string, string | number> = { date: results[0].history[idx].date }
+      results.forEach((res) => {
+        // If history stops early (due to bankruptcy optimization), use 0 or last val
+        const val = res.history[idx]?.totalValue ?? 0
+        row[res.strategyName] = val
+      })
+      // Add dummy point to anchor Y-axis (hidden in Line)
+      row['_yAnchor'] = growthConfig.maxBound
+      return row
     })
-    // Add dummy point to anchor Y-axis (hidden in Line)
-    row['_yAnchor'] = growthConfig.maxBound
-    return row
-  })
+  }, [results, growthConfig])
 
   // Visible Data based on Zoom
   const visibleChartData = React.useMemo(() => {
@@ -340,36 +345,45 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
   }, [visibleChartData, results, growthConfig, zoomState])
 
   // Prepare Drawdown Data
-  const drawdownData = results[0].history.map((h) => ({ date: h.date }))
-  results.forEach((res) => {
-    let peak = -Infinity
-    res.history.forEach((h, idx) => {
-      if (h.totalValue > peak) peak = h.totalValue
-      const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100
-      // Clamp to -100% as you cannot lose more than 100% of peak
-      ;(drawdownData[idx] as Record<string, string | number>)[res.strategyName] = Math.max(-100, dd)
+  const drawdownData = React.useMemo(() => {
+    if (!results || results.length === 0 || !results[0]) return []
+    const data = results[0].history.map((h) => ({ date: h.date }))
+    results.forEach((res) => {
+      let peak = -Infinity
+      res.history.forEach((h, idx) => {
+        if (h.totalValue > peak) peak = h.totalValue
+        const dd = peak === 0 ? 0 : ((h.totalValue - peak) / peak) * 100
+        // Clamp to -100% as you cannot lose more than 100% of peak
+        ;(data[idx] as Record<string, string | number>)[res.strategyName] = Math.max(-100, dd)
+      })
     })
-  })
+    return data
+  }, [results])
 
   // Prepare LTV Data (Only for leveraged profiles)
   const leveragedProfiles = results.filter((r) => r.isLeveraged)
-  let ltvData: Record<string, string | number>[] = []
-  if (leveragedProfiles.length > 0) {
-    ltvData = results[0].history.map((h) => ({ date: h.date }))
+  const ltvData = React.useMemo(() => {
+    if (!results || results.length === 0 || !results[0] || leveragedProfiles.length === 0) return []
+    const data = results[0].history.map((h) => ({ date: h.date }))
     leveragedProfiles.forEach((res) => {
       res.history.forEach((h, idx) => {
-        ;(ltvData[idx] as Record<string, string | number>)[res.strategyName] = h.ltv
+        ;(data[idx] as Record<string, string | number>)[res.strategyName] = h.ltv
       })
     })
-  }
+    return data
+  }, [results, leveragedProfiles])
 
   // Prepare Beta Data
-  const betaData = results[0].history.map((h) => ({ date: h.date }))
-  results.forEach((res) => {
-    res.history.forEach((h, idx) => {
-      ;(betaData[idx] as Record<string, string | number>)[res.strategyName] = h.beta
+  const betaData = React.useMemo(() => {
+    if (!results || results.length === 0 || !results[0]) return []
+    const data = results[0].history.map((h) => ({ date: h.date }))
+    results.forEach((res) => {
+      res.history.forEach((h, idx) => {
+        ;(data[idx] as Record<string, string | number>)[res.strategyName] = h.beta
+      })
     })
-  })
+    return data
+  }, [results])
 
   // Prepare Cash Data for ALL profiles that have cash usage
   const cashCharts = results
@@ -430,8 +444,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
     })
   }, [results, sortConfig])
 
-  if (results.length === 0) return null
-
   const handleDownloadReport = async () => {
     setIsGeneratingReport(true)
     try {
@@ -454,6 +466,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
       <ChevronDown className="w-3 h-3 ml-1 text-blue-600" />
     )
   }
+
+  if (!results || results.length === 0) return null
 
   return (
     <div className="space-y-8">

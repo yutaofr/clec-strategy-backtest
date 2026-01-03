@@ -191,6 +191,8 @@ const dictionaries: Record<Language, Translations> = {
     calculating: 'Calculating...',
     calculationDesc: 'Running simulation for 400+ combinations',
     largeSetWarning: 'Displaying Top 10 + Bottom 5 strategies for optimal performance.',
+    clearAll: 'Clear All Profiles',
+    confirmClearAll: 'Are you sure you want to delete ALL profiles? This action cannot be undone.',
   },
   fr: {
     appTitle: 'Backtesteur QQQ',
@@ -375,6 +377,9 @@ const dictionaries: Record<Language, Translations> = {
     calculationDesc: 'Simulation de plus de 400 combinaisons',
     largeSetWarning:
       'Affichage des 10 meilleurs + 5 moins bons profils pour des performances optimales.',
+    clearAll: 'Effacer tous les profils',
+    confirmClearAll:
+      'Êtes-vous sûr de vouloir supprimer TOUS les profils ? Cette action est irréversible.',
   },
   'zh-CN': {
     appTitle: 'QQQ 回测工具',
@@ -551,6 +556,8 @@ const dictionaries: Record<Language, Translations> = {
     calculating: '正在计算中...',
     calculationDesc: '正在为 400 多个组合运行回测模拟',
     largeSetWarning: '为保证性能，图表仅展示排名靠前的 10 个及回撤最大的 5 个方案。',
+    clearAll: '清空所有方案',
+    confirmClearAll: '您确定要删除所有配置方案吗？此操作无法撤销。',
   },
   'zh-TW': {
     appTitle: 'QQQ 回測工具',
@@ -727,6 +734,8 @@ const dictionaries: Record<Language, Translations> = {
     calculating: '正在計算中...',
     calculationDesc: '正在為 400 多個組合運行回測模擬',
     largeSetWarning: '為保證性能，圖表僅展示排名靠前的 10 個及回撤最大的 5 個方案。',
+    clearAll: '清空所有方案',
+    confirmClearAll: '您確定要刪除所有配置方案嗎？此操作無法撤銷。',
   },
 }
 
@@ -739,7 +748,15 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en')
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('app_language')
+    return (saved as Language) || 'en'
+  })
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang)
+    localStorage.setItem('app_language', lang)
+  }
 
   const t = (key: string) => {
     return dictionaries[language][key] || key

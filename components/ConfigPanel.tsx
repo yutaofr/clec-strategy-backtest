@@ -336,6 +336,13 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     e.target.value = ''
   }
 
+  const handleClearAll = () => {
+    if (window.confirm(t('confirmClearAll'))) {
+      onProfilesChange([])
+      setEditingProfileId(null)
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Edit View
   // --------------------------------------------------------------------------
@@ -910,9 +917,21 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   // --------------------------------------------------------------------------
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 mb-4 text-slate-800">
-        <Settings className="w-6 h-6 text-blue-600" />
-        <h2 className="text-lg font-bold">{t('profiles')}</h2>
+      <div className="flex items-center justify-between mb-4 text-slate-800">
+        <div className="flex items-center gap-2">
+          <Settings className="w-6 h-6 text-blue-600" />
+          <h2 className="text-lg font-bold">{t('profiles')}</h2>
+        </div>
+        {profiles.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex items-center gap-1.5 group"
+            title={t('clearAll')}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="text-xs font-semibold hidden group-hover:inline">{t('clearAll')}</span>
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
