@@ -11,24 +11,24 @@ docker compose up app          # Development server
 docker compose run test        # Testing (unit + E2E)
 docker compose run lint        # Linting and format checking
 docker compose up prod-test    # Production build
-docker compose up -f docker-compose.e2e.yml e2e  # E2E tests
+docker compose -f docker-compose.e2e.yml up e2e  # E2E tests (Bun pre-installed)
 ```
 
-### Direct npm Commands (Local dev only)
+### Direct bun Commands (Local dev only)
 
 ```bash
-npm run dev          # Start Vite dev server
-npm run build        # Production build (tsc + vite build)
-npm run test         # Run all unit tests (Vitest)
-npm run lint        # ESLint check
-npm run format      # Format with Prettier
+bun run dev          # Start Vite dev server
+bun run build        # Production build (tsc + vite build)
+bun run test         # Run all unit tests (Vitest)
+bun run lint         # ESLint check
+bun run format       # Format with Prettier
 ```
 
 ### Testing
 
 ```bash
-npx vitest run financeMath.test
-npx playwright test calculation.spec.ts
+bun run vitest run financeMath.test
+bun run playwright test calculation.spec.ts
 ```
 
 ---
@@ -171,7 +171,7 @@ import { yourFunction } from '../yourModule'
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
-- **NEVER** run `npm install`, `npm run build`, `vitest`, etc. directly - **ALWAYS** use Docker containers (`docker compose run ...`)
+- **NEVER** run `bun install`, `bun run build`, `vitest`, etc. directly - **ALWAYS** use Docker containers (`docker compose run ...`)
 - **NO** global installs (`npx`, `pip install -U`, `gem install`) on host
 - **NO** hardcoded UI strings - **ALWAYS** register in `services/i18n.tsx` for i18n support
 - **NO** precision loss in financial calculations - preserve full precision internally

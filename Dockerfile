@@ -1,20 +1,20 @@
 # --- Build Stage ---
-FROM node:20-alpine AS build
+FROM oven/bun:latest AS build
 
 WORKDIR /app
 
 # Install dependencies first (better caching)
-COPY package*.json ./
-RUN npm install
+COPY package*.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 # Copy source code and build
 COPY . .
 
 # Enforce code quality
-RUN npm run lint
-RUN npm run check-format
+RUN bun run lint
+RUN bun run check-format
 
-RUN npm run build
+RUN bun run build
 
 # --- Production Stage ---
 FROM nginx:stable-alpine

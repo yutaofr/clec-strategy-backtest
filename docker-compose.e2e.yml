@@ -15,7 +15,9 @@ services:
       start_period: 5s
 
   e2e:
-    image: mcr.microsoft.com/playwright:v1.57.0-jammy
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
     working_dir: /app
     volumes:
       - .:/app
@@ -28,12 +30,11 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        npm install &&
         echo 'Waiting for app to be ready...' &&
         until curl -f http://localhost > /dev/null 2>&1; do
           echo 'App not ready yet, waiting...'
           sleep 2
         done &&
         echo 'App is ready, starting tests...' &&
-        npx playwright test
+        bun run playwright test
       "

@@ -122,11 +122,11 @@ View comprehensive performance metrics:
 
 1. **Clone & Install**:
    ```bash
-   npm install
+   bun install
    ```
 2. **Launch**:
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 ### Docker Deployment
@@ -138,7 +138,7 @@ docker-compose up -d
 ### Mobile Sync (Capacitor)
 
 ```bash
-npm run mobile:sync
+bun run mobile:sync
 ```
 
 ---
