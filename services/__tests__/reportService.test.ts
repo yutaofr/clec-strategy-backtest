@@ -1,5 +1,5 @@
 import { expect, it, describe, vi, beforeEach } from 'vitest'
-import { generateProfessionalReport } from '../reportService'
+import { generateProfessionalReport, exportReportMobileAware } from '../reportService'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -82,10 +82,11 @@ describe('reportService', () => {
 
   it('should generate a professional report without errors', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await generateProfessionalReport(mockResults as any)
+    const doc = await generateProfessionalReport(mockResults as any)
 
-    // Verify jsPDF was instantiated
+    // Verify jsPDF was instantiated and returned
     expect(jsPDF).toHaveBeenCalled()
+    expect(doc).toBeDefined()
 
     // Verify fonts were added for both normal and bold
     const docInstance = vi.mocked(jsPDF).mock.results[0].value
@@ -110,7 +111,64 @@ describe('reportService', () => {
       }),
     )
 
-    // Verify save was called
-    expect(docInstance.save).toHaveBeenCalled()
+    expect(docInstance.save).not.toHaveBeenCalled()
+  })
+
+  it('should export report mobile-aware without errors', async () => {
+    // Mock Capacitor platform detection
+    vi.mock('@capacitor/core', () => ({
+      Capacitor: {
+        isNativePlatform: () => false, // Test web fallback
+      },
+    }))
+
+    // Mock Capacitor plugins
+    vi.mock('@capacitor/filesystem', () => ({
+      Filesystem: {
+        writeFile: vi.fn(),
+      },
+    }))
+
+    vi.mock('@capacitor/share', () => ({
+      Share: {
+        share: vi.fn(),
+      },
+    }))
+
+    // Create a new mock instance for this test
+    const mockDoc = {
+      addFileToVFS: vi.fn(),
+      addFont: vi.fn(),
+      setFont: vi.fn(),
+      setFontSize: vi.fn(),
+      setTextColor: vi.fn(),
+      setFillColor: vi.fn(),
+      rect: vi.fn(),
+      text: vi.fn(),
+      addPage: vi.fn(),
+      addImage: vi.fn(),
+      save: vi.fn(),
+      splitTextToSize: vi.fn().mockReturnValue(['line1', 'line2']),
+      internal: {
+        pageSize: {
+          getWidth: () => 210,
+          getHeight: () => 297,
+        },
+      },
+      lastAutoTable: { finalY: 100 },
+      output: vi.fn().mockReturnValue({
+        split: () => ['', 'mock-base64-data'],
+      }),
+    }
+
+    // Mock jsPDF constructor for this test
+    const jsPDFMock = vi.fn().mockReturnValue(mockDoc)
+    vi.mocked(jsPDF).mockImplementation(jsPDFMock)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await exportReportMobileAware(mockResults as any)
+
+    // On web, should fallback to direct save
+    expect(mockDoc.save).toHaveBeenCalled()
   })
 })

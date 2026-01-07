@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { AssetConfig, Profile, StrategyType } from '../types'
+import { haptics } from '../services/haptics'
 import {
   Settings,
   DollarSign,
@@ -144,9 +145,11 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     setEditingProfileId(newId)
   }
 
-  const handleDeleteProfile = (e: React.MouseEvent, id: string) => {
+  const handleDeleteProfile = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     if (profiles.length <= 1) return // Prevent deleting last profile
+
+    await haptics.warningNotification() // Warning feedback when deleting profile
     onProfilesChange(profiles.filter((p) => p.id !== id))
     if (editingProfileId === id) setEditingProfileId(null)
   }

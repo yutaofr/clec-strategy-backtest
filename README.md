@@ -8,7 +8,9 @@
 [![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Capacitor](https://img.shields.io/badge/capacitor-%2338B2AC.svg?style=flat&logo=capacitor&logoColor=white)](https://capacitorjs.com/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![PWA](https://img.shields.io/badge/PWA-Ready-blue.svg)](https://web.dev/progressive-web-apps/)
 
 </div>
 
@@ -64,6 +66,15 @@
 - **i18n Ready**: Fully localized interface support.
 - **Cross-Platform**: Built with Capacitor for seamless transition to mobile platforms (Android/iOS).
 
+### 📱 Mobile & PWA Features
+
+- **Progressive Web App (PWA)**: Install directly from browser on any device.
+- **Native Mobile Apps**: Full Android APK and iOS IPA builds with app store deployment.
+- **Haptic Feedback**: Native touch feedback for enhanced mobile experience.
+- **Offline Capability**: Service worker enables offline functionality.
+- **Mobile-Optimized UI**: Touch-friendly interface with safe area support for modern devices.
+- **Native File Sharing**: PDF reports shared through native mobile sharing sheets.
+
 ---
 
 ## 🛠 Tech Stack
@@ -73,7 +84,8 @@
 - **Styling**: Tailwind CSS
 - **Charts**: Recharts
 - **PDF Generation**: jsPDF + jspdf-autotable + html2canvas
-- **Mobile**: Capacitor
+- **Mobile**: Capacitor with plugins (Haptics, Filesystem, Share, Preferences, Status Bar, Splash Screen)
+- **PWA**: Vite PWA plugin with service worker
 - **Deployment**: Docker & Docker Compose
 
 ---
@@ -111,12 +123,117 @@ View comprehensive performance metrics:
 - Calmar Ratio, Ulcer Index, Recovery Time
 - Interactive comparison charts
 
+## 📱 Mobile Apps & PWA
+
+**CLEC Strategy Backtester** is available as both a Progressive Web App (PWA) and native mobile applications for Android and iOS.
+
+### 🌐 Progressive Web App (PWA)
+
+Install directly from your browser - no app store required!
+
+#### Installation Steps:
+
+**On Android Chrome:**
+
+1. Open `http://your-server:4173` in Chrome
+2. Tap the menu (⋮) → "Add to Home screen"
+3. Name it "Backtester" → "Add"
+4. App icon appears on home screen
+
+**On iOS Safari:**
+
+1. Open `http://your-server:4173` in Safari
+2. Tap Share button → "Add to Home Screen"
+3. Tap "Add" in top right
+4. App icon appears on home screen
+
+#### PWA Features:
+
+- ✅ Install from browser
+- ✅ Offline functionality
+- ✅ Native app-like experience
+- ✅ Automatic updates
+- ✅ No app store restrictions
+
+### 📱 Native Mobile Apps
+
+Full native Android and iOS applications with enhanced mobile features.
+
+#### Android APK Build:
+
+```bash
+# Install dependencies
+bun add @capacitor/android
+
+# Add Android platform
+bunx cap add android
+
+# Build and sync
+bun run build
+bunx cap sync android
+
+# Build APK (requires Android Studio)
+bunx cap open android
+# Then in Android Studio: Build → Build Bundle(s)/APK(s) → Build APK(s)
+```
+
+#### iOS IPA Build (macOS only):
+
+```bash
+# Install dependencies
+bun add @capacitor/ios
+
+# Add iOS platform
+bunx cap add ios
+
+# Build and sync
+bun run build
+bunx cap sync ios
+
+# Build IPA (requires Xcode)
+bunx cap open ios
+# Then in Xcode: Product → Archive → Distribute App
+```
+
+### 🎯 Mobile Features:
+
+- **Haptic Feedback**: Native touch vibrations for interactions
+- **Native File Sharing**: PDF reports shared through system sharing sheets
+- **Safe Area Support**: Proper display on devices with notches/screens
+- **Touch Optimization**: 44px minimum touch targets for accessibility
+- **Offline Storage**: Data persists between app sessions
+- **Native Performance**: Optimized for mobile hardware
+
+### 🧪 Testing Mobile Apps:
+
+#### Web Testing (PWA):
+
+```bash
+# Start development server
+bun run dev --host --port 5173
+# Access: http://192.168.1.x:5173
+```
+
+#### Native Testing:
+
+```bash
+# Build and sync to devices
+bun run build
+bunx cap sync
+bunx cap run android  # Test on connected Android device
+bunx cap run ios      # Test on connected iOS device (macOS)
+```
+
 ## 💻 Getting Started
 
 ### Prerequisites
 
 - Node.js (Latest LTS recommended)
 - Docker (Optional, for containerized deployment)
+- **For Mobile Development:**
+  - Android Studio (for Android APK builds)
+  - Xcode (for iOS IPA builds, macOS only)
+  - Java JDK 11+ (for Android)
 
 ### Local Development
 
@@ -124,9 +241,16 @@ View comprehensive performance metrics:
    ```bash
    bun install
    ```
-2. **Launch**:
+2. **Launch Web App**:
+
    ```bash
    bun run dev
+   ```
+
+3. **Launch with Network Access (for mobile testing)**:
+   ```bash
+   bun run dev --host --port 5173
+   # Access: http://192.168.1.x:5173
    ```
 
 ### Docker Deployment
@@ -135,10 +259,33 @@ View comprehensive performance metrics:
 docker-compose up -d
 ```
 
-### Mobile Sync (Capacitor)
+### Mobile App Development
+
+#### First-Time Setup:
 
 ```bash
-bun run mobile:sync
+# Install mobile platforms
+bun add @capacitor/android @capacitor/ios
+
+# Add native platforms
+bunx cap add android
+bunx cap add ios
+```
+
+#### Development Workflow:
+
+```bash
+# After making web app changes
+bun run build
+bunx cap sync  # Sync web assets to native apps
+
+# Test on devices
+bunx cap run android  # Test on Android device
+bunx cap run ios      # Test on iOS device (macOS)
+
+# Build release APKs/IPAs
+bunx cap build android  # Opens Android Studio
+bunx cap build ios      # Opens Xcode
 ```
 
 ---
@@ -191,10 +338,83 @@ The simulation engine follows a systematic monthly iteration process:
 ## 📂 Project Structure
 
 - `components/`: Modular UI components (ResultsDashboard, ConfigPanel, etc.)
-- `services/`: Core logic (simulationEngine, financeMath, strategyDefinitions)
+- `services/`: Core logic (simulationEngine, financeMath, strategyDefinitions, storage, haptics)
 - `docs/`: Evolution path and documentation.
 - `constants.ts`: Global configuration and initial data sets.
 - `types.ts`: Shared TypeScript interfaces.
+- `capacitor.config.ts`: Capacitor configuration for mobile apps
+- `android/` & `ios/`: Native platform projects (generated, not committed to git)
+- `public/`: Static assets including PWA icons and manifest
+
+### 📱 Mobile Development Notes
+
+- **Native platforms** (`android/` and `ios/`) are **not committed** to version control
+- Regenerate them with: `cap add android` / `cap add ios`
+- Mobile plugins are synced automatically via `cap sync`
+- PWA assets are in `public/` directory
+
+### 📜 Available Scripts
+
+- `bun run dev` - Start development server
+- `bun run build` - Build production web app
+- `bun run preview` - Preview production build
+- `bun run mobile:sync` - Build and sync to mobile platforms
+- `bun run test` - Run unit tests
+- `bun run lint` - Run ESLint
+- `bun run format` - Format code with Prettier
+
+### 🔧 Mobile Development Tips
+
+#### Common Issues & Solutions:
+
+**PWA Not Installing:**
+
+- Ensure serving over HTTPS (or localhost for development)
+- Check browser console for service worker errors
+- Clear browser cache and try incognito mode
+
+**Android Build Fails:**
+
+- Install Android Studio and SDK
+- Set ANDROID_HOME environment variable
+- Accept SDK licenses: `sdkmanager --licenses`
+
+**iOS Build Fails (macOS):**
+
+- Install Xcode from App Store
+- Accept Xcode license: `sudo xcodebuild -license accept`
+- Install CocoaPods: `brew install cocoapods`
+
+**Plugin Sync Issues:**
+
+- Run `bunx cap sync` after adding new plugins
+- Check capacitor.config.ts for correct plugin configuration
+- Rebuild native platforms if plugins change significantly
+
+### 🚀 App Store Deployment
+
+#### Google Play Store (Android):
+
+1. Build AAB bundle in Android Studio
+2. Create Google Play Console account ($25 one-time fee)
+3. Upload AAB and fill store listing
+4. Set up internal/beta/alpha testing (recommended first)
+5. Submit for production release
+
+#### Apple App Store (iOS):
+
+1. Build IPA in Xcode
+2. Create Apple Developer account ($99/year)
+3. Upload IPA via App Store Connect
+4. Configure app metadata and screenshots
+5. Submit for App Review (7-10 days)
+
+#### PWA Benefits:
+
+- **No app store fees** or approval processes
+- **Instant updates** - no resubmission required
+- **Cross-platform** - works on any device with a browser
+- **Offline capable** - functions without internet
 
 ---
 

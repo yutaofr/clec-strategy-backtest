@@ -38,7 +38,8 @@ import {
 } from 'lucide-react'
 import { useTranslation } from '../services/i18n'
 import { MathModelModal } from './MathModelModal'
-import { generateProfessionalReport } from '../services/reportService'
+import { exportReportMobileAware } from '../services/reportService'
+import { haptics } from '../services/haptics'
 
 interface ResultsDashboardProps {
   results: SimulationResult[]
@@ -446,10 +447,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
   const handleDownloadReport = async () => {
     setIsGeneratingReport(true)
+    await haptics.mediumImpact() // Medium impact when starting report generation
     try {
-      await generateProfessionalReport(results)
+      await exportReportMobileAware(results)
+      await haptics.successNotification() // Success when report is generated
     } catch (err) {
       console.error(err)
+      await haptics.errorNotification() // Error feedback on failure
     } finally {
       setIsGeneratingReport(false)
     }

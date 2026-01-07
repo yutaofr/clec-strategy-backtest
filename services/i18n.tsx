@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { storage } from './storage'
 
 export type Language = 'en' | 'fr' | 'zh-CN' | 'zh-TW'
 
@@ -748,14 +749,30 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('app_language')
-    return (saved as Language) || 'en'
-  })
+  const [language, setLanguageState] = useState<Language>('en')
 
-  const setLanguage = (lang: Language) => {
+  // Load language from storage on mount
+  useEffect(() => {
+    const loadLanguage = async () => {
+      try {
+        const saved = await storage.get('app_language')
+        if (saved && (saved === 'en' || saved === 'zh' || saved === 'ja')) {
+          setLanguageState(saved as Language)
+        }
+      } catch (error) {
+        console.warn('Failed to load language:', error)
+      }
+    }
+    loadLanguage()
+  }, [])
+
+  const setLanguage = async (lang: Language) => {
     setLanguageState(lang)
-    localStorage.setItem('app_language', lang)
+    try {
+      await storage.set('app_language', lang)
+    } catch (error) {
+      console.warn('Failed to save language:', error)
+    }
   }
 
   const t = (key: string) => {

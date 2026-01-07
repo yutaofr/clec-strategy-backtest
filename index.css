@@ -7,6 +7,46 @@ body {
   min-height: 100vh;
 }
 
+/* Safe area insets for iPhone notch and home indicator */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Touch optimization - prevents zoom/scroll on interactive elements */
+button,
+input,
+[role='button'],
+[tabindex] {
+  touch-action: manipulation;
+}
+
+/* Chart containers - enable pan/zoom */
+#portfolio-growth-chart,
+#drawdown-chart,
+#beta-chart,
+#ltv-chart {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+/* Sidebar drawer - prevent scroll outside */
+aside {
+  touch-action: none;
+}
+
+/* Range sliders - prevent page scroll */
+input[type='range'] {
+  touch-action: none;
+}
+
 /* Ensure action ribbon is visible on touch devices */
 @media (hover: none) {
   .group .opacity-0 {

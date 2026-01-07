@@ -27,3 +27,8 @@ test-results/*
 test-results/.last-run.json
 e2e/docs/*
 report/*
+
+# Capacitor native platforms (regenerated with cap add)
+android/
+ios/
+android-project.tar.gz

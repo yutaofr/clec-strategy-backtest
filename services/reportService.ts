@@ -3,6 +3,9 @@ import autoTable from 'jspdf-autotable'
 import html2canvas from 'html2canvas'
 import { SimulationResult } from '../types'
 import { zpixFont } from './fontData'
+import { Capacitor } from '@capacitor/core'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
 
 interface AIDataItem {
   id: string
@@ -29,7 +32,7 @@ declare module 'jspdf' {
   }
 }
 
-export const generateProfessionalReport = async (results: SimulationResult[]) => {
+export const generateProfessionalReport = async (results: SimulationResult[]): Promise<jsPDF> => {
   const yieldToMain = () => new Promise((resolve) => setTimeout(resolve, 0))
 
   const doc = new jsPDF('p', 'mm', 'a4')
@@ -307,7 +310,59 @@ export const generateProfessionalReport = async (results: SimulationResult[]) =>
 
   await yieldToMain()
 
-  // Save the PDF
+  return doc
+}
+
+/**
+ * Export PDF report with mobile-aware sharing
+ */
+export const exportReportMobileAware = async (results: SimulationResult[]): Promise<void> => {
+  try {
+    // Generate the PDF document
+    const doc = await generateProfessionalReport(results)
+
+    // Get PDF as base64 string
+    const pdfBase64 = doc.output('datauristring').split(',')[1]
+
+    const dateStr = new Date().toISOString().split('T')[0]
+    const fileName = `Strategy_Report_${dateStr}.pdf`
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // Save to temporary directory on mobile
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: pdfBase64,
+          directory: Directory.Cache,
+        })
+
+        // Share the file using native sharing sheet
+        await Share.share({
+          title: 'Strategy Performance Report',
+          text: 'Investment strategy backtest results',
+          url: result.uri,
+          dialogTitle: 'Share Report',
+        })
+      } catch (error) {
+        console.error('Failed to export PDF on mobile:', error)
+        // Fallback to browser download
+        doc.save(fileName)
+      }
+    } else {
+      // Web fallback - direct download
+      doc.save(fileName)
+    }
+  } catch (error) {
+    console.error('Failed to generate PDF report:', error)
+    throw error
+  }
+}
+
+/**
+ * Legacy function for backward compatibility - saves PDF directly
+ */
+export const generateAndDownloadReport = async (results: SimulationResult[]): Promise<void> => {
+  const doc = await generateProfessionalReport(results)
   const dateStr = new Date().toISOString().split('T')[0]
   doc.save(`Strategy_Report_${dateStr}.pdf`)
 }

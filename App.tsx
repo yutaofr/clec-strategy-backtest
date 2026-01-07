@@ -16,6 +16,8 @@ import {
   Activity,
 } from 'lucide-react'
 import { LanguageProvider, useTranslation, Language } from './services/i18n'
+import { storage } from './services/storage'
+import { haptics } from './services/haptics'
 import { version } from './package.json'
 
 const DEFAULT_CONFIG_A: AssetConfig = {
@@ -94,35 +96,50 @@ const INITIAL_PROFILES: Profile[] = [
 const MainApp = () => {
   const { t, language, setLanguage } = useTranslation()
   const [profiles, setProfiles] = useState<Profile[]>(() => {
-    const saved = localStorage.getItem('app_profiles')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Failed to parse saved profiles:', e)
-      }
-    }
+    // Initialize with default profiles, will load from storage in useEffect
     return INITIAL_PROFILES
   })
   const [results, setResults] = useState<SimulationResult[]>([])
   const [isCalculated, setIsCalculated] = useState(false)
-  const [showQQQBenchmark, setShowQQQBenchmark] = useState<boolean>(() => {
-    const saved = localStorage.getItem('app_show_benchmark')
-    return saved === 'true'
-  })
+  const [showQQQBenchmark, setShowQQQBenchmark] = useState<boolean>(false)
   const [isCalculating, setIsCalculating] = useState(false)
 
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
 
   // Sidebar state
-  const [isSidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('app_sidebar_open')
-    return saved !== null ? saved === 'true' : true
-  })
+  const [isSidebarOpen, setSidebarOpen] = useState(true)
 
-  // Auto-collapse on small screens initially
+  // Load data from storage on mount
   useEffect(() => {
+    const loadStoredData = async () => {
+      try {
+        // Load profiles
+        const savedProfiles = await storage.get('app_profiles')
+        if (savedProfiles) {
+          try {
+            const parsed = JSON.parse(savedProfiles)
+            setProfiles(parsed)
+          } catch (e) {
+            console.error('Failed to parse saved profiles:', e)
+          }
+        }
+
+        // Load benchmark setting
+        const savedBenchmark = await storage.get('app_show_benchmark')
+        setShowQQQBenchmark(savedBenchmark === 'true')
+
+        // Load sidebar state
+        const savedSidebar = await storage.get('app_sidebar_open')
+        setSidebarOpen(savedSidebar !== null ? savedSidebar === 'true' : true)
+      } catch (error) {
+        console.warn('Failed to load stored data:', error)
+      }
+    }
+
+    loadStoredData()
+
+    // Auto-collapse on small screens initially
     if (window.innerWidth < 1024) {
       setSidebarOpen(false)
     }
@@ -130,15 +147,15 @@ const MainApp = () => {
 
   // Persistence Effects
   useEffect(() => {
-    localStorage.setItem('app_profiles', JSON.stringify(profiles))
+    storage.set('app_profiles', JSON.stringify(profiles))
   }, [profiles])
 
   useEffect(() => {
-    localStorage.setItem('app_show_benchmark', String(showQQQBenchmark))
+    storage.set('app_show_benchmark', String(showQQQBenchmark))
   }, [showQQQBenchmark])
 
   useEffect(() => {
-    localStorage.setItem('app_sidebar_open', String(isSidebarOpen))
+    storage.set('app_sidebar_open', String(isSidebarOpen))
   }, [isSidebarOpen])
 
   useEffect(() => {
@@ -148,8 +165,9 @@ const MainApp = () => {
     }
   }, [profiles])
 
-  const handleRunSimulation = useCallback(() => {
+  const handleRunSimulation = useCallback(async () => {
     setIsCalculating(true)
+    await haptics.heavyImpact() // Heavy impact when starting simulation
 
     // Using setTimeout to allow UI to render the "Calculating" state before heavy CPU task
     setTimeout(() => {
@@ -197,6 +215,7 @@ const MainApp = () => {
       setResults(newResults)
       setIsCalculated(true)
       setIsCalculating(false)
+      haptics.successNotification() // Success feedback when simulation completes
 
       // Auto close on mobile only
       if (window.innerWidth < 1024) {
