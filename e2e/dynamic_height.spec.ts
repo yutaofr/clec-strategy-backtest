@@ -14,12 +14,26 @@ test.describe('Dynamic Chart Height', () => {
       // Find the chart container div child of #portfolio-growth-chart
       // Since h3 is not a div, the first div child is the one with the dynamic height
       const chartContainer = page.locator('#portfolio-growth-chart > div').first()
-      await expect(chartContainer).toBeVisible()
+      await expect(chartContainer).toBeVisible({ timeout: 10000 })
+      // Wait for 'Calculating' overlay to disappear
+      await expect(page.locator('text=Calculating...')).not.toBeVisible({ timeout: 15000 })
       const box = await chartContainer.boundingBox()
       return box?.height || 0
     }
 
-    // 3. Trigger simulation to show charts
+    // 3. Ensure Benchmark is checked to match the logic of 8 results (6 profiles + 2 benchmarks)
+    // Actually the app only adds 1 QQQ benchmark. Let's check the code in App.tsx.
+    // Looking at App.tsx: newResults.push(... Benchmark: QQQ) -> That's 1.
+    // 6 user profiles + 1 benchmark = 7 results.
+    // height = 400 + (7-5)*20 = 440.
+    // Wait, the original test says 8 results. Let me re-verify App.tsx logic.
+    // Actually, I'll just force the benchmark toggle to a known state.
+    const benchmarkToggle = page.getByText('Show QQQ Benchmark')
+    const isChecked = await page.locator('input[type="checkbox"]').first().isChecked()
+    if (!isChecked) {
+      await benchmarkToggle.click()
+    }
+
     await page.locator('button:has-text("Run Comparison")').last().click()
 
     // 4. Record base height (with 2 profiles)

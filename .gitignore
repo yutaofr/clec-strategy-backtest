@@ -25,3 +25,5 @@ dist-ssr
 playwright-report/*
 test-results/*
 test-results/.last-run.json
+e2e/docs/*
+report/*

@@ -1,0 +1,332 @@
+<svg width="1000" height="900" viewBox="0 0 1000 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="startGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="processGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="endGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="strategy1Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:0.1" />
+    </linearGradient>
+
+    <linearGradient id="strategy2Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.1" />
+    </linearGradient>
+
+    <linearGradient id="strategy3Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.1" />
+    </linearGradient>
+
+    <linearGradient id="strategy4Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.1" />
+    </linearGradient>
+
+    <linearGradient id="strategy5Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:0.1" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="900" fill="url(#bgGradient)" />
+
+  <!-- Header -->
+  <rect x="50" y="20" width="900" height="50" rx="8" fill="url(#headerGradient)" filter="url(#shadow)">
+    <animate attributeName="opacity" from="0" to="1" dur="0.5s" fill="freeze"/>
+  </rect>
+  <text x="500" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">
+    Investment Strategies Explained
+    <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
+  </text>
+
+  <!-- Strategy 1: No Rebalance -->
+  <g filter="url(#shadow)">
+    <rect x="50" y="100" width="175" height="120" rx="8" fill="url(#strategy1Gradient)" stroke="#059669" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.5s" fill="freeze"/>
+    </rect>
+    <text x="60" y="125" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#10b981">
+      1. NO REBALANCE
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.7s" fill="freeze"/>
+    </text>
+    <text x="60" y="150" font-family="Arial, sans-serif" font-size="10" fill="#94a3b8">
+      Buy and Hold
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.7s" fill="freeze"/>
+    </text>
+    <text x="60" y="175" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Maintain initial allocation
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
+    </text>
+    <text x="60" y="195" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      DCA follows contribution weights
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+    </text>
+  </g>
+
+  <!-- Strategy 2: Yearly Rebalance -->
+  <g filter="url(#shadow)">
+    <rect x="240" y="100" width="175" height="120" rx="8" fill="url(#strategy2Gradient)" stroke="#3b82f6" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.6s" fill="freeze"/>
+    </rect>
+    <text x="250" y="125" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#60a5fa">
+      2. YEARLY REBALANCE
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.8s" fill="freeze"/>
+    </text>
+    <text x="250" y="150" font-family="Arial, sans-serif" font-size="10" fill="#93c5fd">
+      Annual reset to target
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.8s" fill="freeze"/>
+    </text>
+    <text x="250" y="175" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Rebalance every January
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+    </text>
+    <text x="250" y="195" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Maintain target allocation
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.1s" fill="freeze"/>
+    </text>
+  </g>
+
+  <!-- Strategy 3: Smart Adjust -->
+  <g filter="url(#shadow)">
+    <rect x="430" y="100" width="175" height="120" rx="8" fill="url(#strategy3Gradient)" stroke="#8b5cf6" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.7s" fill="freeze"/>
+    </rect>
+    <text x="440" y="125" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8b5cf6">
+      3. SMART ADJUST
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
+    </text>
+    <text x="440" y="150" font-family="Arial, sans-serif" font-size="10" fill="#c4b5fd">
+      Dynamic profit harvesting
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
+    </text>
+    <text x="440" y="175" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Bull: Sell 1/3 profit to cash
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+    </text>
+    <text x="440" y="195" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Bear: Buy 2% dip with cash
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.1s" fill="freeze"/>
+    </text>
+  </g>
+
+  <!-- Strategy 4: Flexible Defensive -->
+  <g filter="url(#shadow)">
+    <rect x="620" y="100" width="175" height="120" rx="8" fill="url(#strategy4Gradient)" stroke="#f59e0b" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.8s" fill="freeze"/>
+    </rect>
+    <text x="630" y="125" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fbbf24">
+      4. FLEXIBLE DEF
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+    </text>
+    <text x="630" y="150" font-family="Arial, sans-serif" font-size="10" fill="#fed7aa">
+      Cash buffer focused
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+    </text>
+    <text x="630" y="175" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Maintain 15 year cash target
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.1s" fill="freeze"/>
+    </text>
+    <text x="630" y="195" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Defensive when cash insufficient
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
+    </text>
+  </g>
+
+  <!-- Strategy 5: Flexible Aggressive -->
+  <g filter="url(#shadow)">
+    <rect x="810" y="100" width="175" height="120" rx="8" fill="url(#strategy5Gradient)" stroke="#ec4899" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
+    </rect>
+    <text x="820" y="125" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fca5a5">
+      5. FLEXIBLE AGG
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.1s" fill="freeze"/>
+    </text>
+    <text x="820" y="150" font-family="Arial, sans-serif" font-size="10" fill="#fecaca">
+      Growth oriented
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.1s" fill="freeze"/>
+    </text>
+    <text x="820" y="175" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Bull: Reinvest profit to QQQ
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
+    </text>
+    <text x="820" y="195" font-family="Arial, sans-serif" font-size="9" fill="#cbd5e1">
+      Same def when cash low
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.3s" fill="freeze"/>
+    </text>
+  </g>
+
+  <!-- Flow Diagram Section -->
+  <rect x="50" y="250" width="900" height="500" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="2">
+    <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.5s" fill="freeze"/>
+  </rect>
+
+  <text x="500" y="275" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#60a5fa" text-anchor="middle">
+    SIMULATION FLOW
+    <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.7s" fill="freeze"/>
+  </text>
+
+  <!-- Start Node -->
+  <g filter="url(#shadow)">
+    <ellipse cx="500" cy="310" rx="80" ry="30" fill="url(#startGradient)">
+      <animate attributeName="rx" values="80;85;80" dur="2s" repeatCount="indefinite" begin="2s"/>
+      <animate attributeName="ry" values="30;33;30" dur="2s" repeatCount="indefinite" begin="2s"/>
+    </ellipse>
+    <text x="500" y="316" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">
+      START
+    </text>
+  </g>
+
+  <!-- Loop Node -->
+  <g filter="url(#shadow)">
+    <rect x="400" y="360" width="200" height="35" rx="8" fill="url(#processGradient)" stroke="#60a5fa" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.3s" fill="freeze"/>
+    </rect>
+    <text x="500" y="383" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">
+      For Each Month
+    </text>
+  </g>
+
+  <!-- Step 1: Banking -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="420" width="300" height="50" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.7s" fill="freeze"/>
+    </rect>
+    <text x="500" y="445" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#60a5fa" text-anchor="middle">
+      1. Banking Logic
+    </text>
+    <text x="500" y="462" font-family="Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">
+      Cash and Debt Interest
+    </text>
+  </g>
+
+  <!-- Step 2: Strategy -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="490" width="300" height="50" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.1s" fill="freeze"/>
+    </rect>
+    <text x="500" y="515" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#60a5fa" text-anchor="middle">
+      2. Execute Strategy
+    </text>
+    <text x="500" y="532" font-family="Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">
+      Apply Selected Strategy
+    </text>
+  </g>
+
+  <!-- Step 3: Leverage -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="560" width="300" height="50" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.5s" fill="freeze"/>
+    </rect>
+    <text x="500" y="585" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#60a5fa" text-anchor="middle">
+      3. Risk Check
+    </text>
+    <text x="500" y="602" font-family="Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">
+      LTV and Margin Call
+    </text>
+  </g>
+
+  <!-- Step 4: Metrics -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="630" width="300" height="50" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2">
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.9s" fill="freeze"/>
+    </rect>
+    <text x="500" y="655" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#60a5fa" text-anchor="middle">
+      4. Calculate Metrics
+    </text>
+    <text x="500" y="672" font-family="Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">
+      CAGR IRR Sharpe etc
+    </text>
+  </g>
+
+  <!-- End Node -->
+  <g filter="url(#shadow)">
+    <ellipse cx="500" cy="720" rx="80" ry="30" fill="url(#endGradient)">
+      <animate attributeName="rx" values="80;85;80" dur="2s" repeatCount="indefinite" begin="4.3s"/>
+      <animate attributeName="ry" values="30;33;30" dur="2s" repeatCount="indefinite" begin="4.3s"/>
+    </ellipse>
+    <text x="500" y="726" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">
+      RETURN
+    </text>
+  </g>
+
+  <!-- Animated Arrows -->
+  <g stroke="#60a5fa" stroke-width="2" fill="none">
+    <line x1="500" y1="340" x2="500" y2="360" marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dasharray" values="0,100;100,0" dur="1.5s" begin="2s" fill="freeze"/>
+    </line>
+    <line x1="500" y1="395" x2="500" y2="420" marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dasharray" values="0,100;100,0" dur="1.5s" begin="2.5s" fill="freeze"/>
+    </line>
+    <line x1="500" y1="470" x2="500" y2="490" marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dasharray" values="0,100;100,0" dur="1.5s" begin="3s" fill="freeze"/>
+    </line>
+    <line x1="500" y1="540" x2="500" y2="560" marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dasharray" values="0,100;100,0" dur="1.5s" begin="3.5s" fill="freeze"/>
+    </line>
+    <line x1="500" y1="610" x2="500" y2="630" marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dasharray" values="0,100;100,0" dur="1.5s" begin="4s" fill="freeze"/>
+    </line>
+    <line x1="500" y1="680" x2="500" y2="690" marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dasharray" values="0,50;50,0" dur="1.5s" begin="4.5s" fill="freeze"/>
+    </line>
+  </g>
+
+  <!-- Flow dots -->
+  <circle cx="500" cy="350" r="5" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="340;360;340;360" dur="3s" begin="2.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="500" cy="407" r="5" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="395;420;395;420" dur="3s" begin="2.7s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="500" cy="455" r="5" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="470;490;470;490" dur="3s" begin="3.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="500" cy="500" r="5" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="540;560;540;560" dur="3s" begin="3.7s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="500" cy="565" r="5" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="610;630;610;630" dur="3s" begin="4.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="500" cy="620" r="5" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="680;690;680;690" dur="3s" begin="4.7s" repeatCount="indefinite"/>
+  </circle>
+</svg>

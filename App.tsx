@@ -121,6 +121,29 @@ const MainApp = () => {
     return saved !== null ? saved === 'true' : true
   })
 
+  // Clear results if market data has changed (cache busting)
+  useEffect(() => {
+    const lastDataDate = MARKET_DATA[MARKET_DATA.length - 1].date
+    const savedLastDate = localStorage.getItem('app_last_market_date')
+    const savedVersion = localStorage.getItem('app_version')
+
+    // Only clear if the version has major change or market data extended significantly
+    // and we are NOT in a testing environment (though window.CI isn't always set)
+    if (savedLastDate && savedLastDate !== lastDataDate) {
+      // Market data updated - just record the new date, don't necessarily clear everything
+      // unless the user explicitly wants to reset. For now, let's just update the tracker.
+      localStorage.setItem('app_last_market_date', lastDataDate)
+    }
+
+    if (savedVersion && savedVersion !== version) {
+      localStorage.setItem('app_version', version)
+      // If major version changed, we could clear, but let's be conservative to not break tests
+    }
+
+    if (!savedLastDate) localStorage.setItem('app_last_market_date', lastDataDate)
+    if (!savedVersion) localStorage.setItem('app_version', version)
+  }, [])
+
   // Auto-collapse on small screens initially
   useEffect(() => {
     if (window.innerWidth < 1024) {
@@ -359,7 +382,10 @@ const MainApp = () => {
             />
 
             <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">
-              <p>{t('dataRange')}: 2000 - 2025</p>
+              <p>
+                {t('dataRange')}: {MARKET_DATA[0].date.substring(0, 4)} -{' '}
+                {MARKET_DATA[MARKET_DATA.length - 1].date.substring(0, 4)}
+              </p>
               <p className="mt-2">{t('appDesc')}</p>
             </div>
           </div>

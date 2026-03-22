@@ -24,17 +24,17 @@ services:
       - '3000:80'
 
   test:
-    image: node:20-alpine
+    image: oven/bun:latest
     working_dir: /app
     volumes:
       - .:/app
       - /app/node_modules
-    command: sh -c "npm install && npm test"
+    command: sh -c "bun install && bun run test"
 
   lint:
-    image: node:20-alpine
+    image: oven/bun:latest
     working_dir: /app
     volumes:
       - .:/app
       - /app/node_modules
-    command: sh -c "npm install && npm run lint && npm run check-format"
+    command: sh -c "bun install && bun run lint && bun run check-format"
