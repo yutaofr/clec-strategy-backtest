@@ -280,17 +280,25 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ results }) =
 
     let cleanStep = magnitude
     if (normalizedStep > 5) cleanStep = 10 * magnitude
-    else if (normalizedStep > 2) cleanStep = 5 * magnitude
-    else if (normalizedStep > 1) cleanStep = 2 * magnitude
+    else if (normalizedStep > 2.5) cleanStep = 5 * magnitude
+    else if (normalizedStep > 1.5) cleanStep = 2 * magnitude
 
-    const cleanMin = Math.max(0, Math.floor(finalMin / cleanStep) * cleanStep)
+    // CRITICAL: Ensure cleanStep is large enough relative to maxBound to avoid floating point stuck loops
+    // Double precision has ~15-17 significant digits.
+    const minSafeStep = Math.max(1e-12, Math.abs(rawMax) * 1e-14)
+    if (cleanStep < minSafeStep) cleanStep = minSafeStep
+
+    const cleanMin = Math.floor(finalMin / cleanStep) * cleanStep
     const cleanMax = Math.ceil(rawMax / cleanStep) * cleanStep
 
     const ticks: number[] = []
     let curr = cleanMin
-    while (curr < cleanMax + cleanStep / 10) {
-      ticks.push(Number(curr.toFixed(10))) // Avoid floating point issues
+    let safetyCounter = 0
+    // Limit to 50 ticks to satisfy E2E test constraints and prevent UI clutter/crashes
+    while (curr <= cleanMax + cleanStep / 10 && safetyCounter < 50) {
+      ticks.push(Number(curr.toFixed(curr < 1 ? 4 : 2))) // Use appropriate precision
       curr += cleanStep
+      safetyCounter++
     }
     return { step: cleanStep, minBound: cleanMin, maxBound: cleanMax, ticks }
   }

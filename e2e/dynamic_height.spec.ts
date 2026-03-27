@@ -13,7 +13,7 @@ test.describe('Dynamic Chart Height', () => {
     const getChartHeight = async () => {
       // Find the chart container div child of #portfolio-growth-chart
       // Since h3 is not a div, the first div child is the one with the dynamic height
-      const chartContainer = page.locator('#portfolio-growth-chart > div').first()
+      const chartContainer = page.locator('#portfolio-growth-chart > div').last()
       await expect(chartContainer).toBeVisible({ timeout: 10000 })
       // Wait for 'Calculating' overlay to disappear
       await expect(page.locator('text=Calculating...')).not.toBeVisible({ timeout: 15000 })
@@ -21,20 +21,17 @@ test.describe('Dynamic Chart Height', () => {
       return box?.height || 0
     }
 
-    // 3. Ensure Benchmark is checked to match the logic of 8 results (6 profiles + 2 benchmarks)
-    // Actually the app only adds 1 QQQ benchmark. Let's check the code in App.tsx.
-    // Looking at App.tsx: newResults.push(... Benchmark: QQQ) -> That's 1.
-    // 6 user profiles + 1 benchmark = 7 results.
-    // height = 400 + (7-5)*20 = 440.
-    // Wait, the original test says 8 results. Let me re-verify App.tsx logic.
-    // Actually, I'll just force the benchmark toggle to a known state.
-    const benchmarkToggle = page.getByText('Show QQQ Benchmark')
-    const isChecked = await page.locator('input[type="checkbox"]').first().isChecked()
+    // 3. Ensure Benchmarks is checked to match the logic of 8 results (6 profiles + 2 benchmarks)
+    const benchmarkToggle = page.getByText('Show Benchmarks (QQQ & QLD)')
+    const isChecked = await page.locator('input[type="checkbox"]').last().isChecked()
     if (!isChecked) {
+      await benchmarkToggle.scrollIntoViewIfNeeded()
       await benchmarkToggle.click()
     }
 
-    await page.locator('button:has-text("Run Comparison")').last().click()
+    const runBtn = page.getByRole('button', { name: 'Run Comparison' })
+    await runBtn.scrollIntoViewIfNeeded()
+    await runBtn.click()
 
     // 4. Record base height (with 2 profiles)
     const baseHeight = await getChartHeight()

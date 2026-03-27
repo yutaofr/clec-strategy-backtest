@@ -491,6 +491,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 <DollarSign className="w-4 h-4" /> {t('initialCapital')}
               </label>
               <input
+                id="initial-capital-input"
                 type="number"
                 value={profile.config.initialCapital}
                 onChange={(e) =>
@@ -953,6 +954,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         {profiles.map((profile) => (
           <div
             key={profile.id}
+            data-testid="profile-card"
             onClick={() => setEditingProfileId(profile.id)}
             className="group relative rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white overflow-hidden"
             style={{ borderLeft: `4px solid ${profile.color}` }}

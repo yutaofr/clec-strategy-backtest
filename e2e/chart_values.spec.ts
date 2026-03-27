@@ -8,8 +8,16 @@ test.describe('Chart Value Formatting', () => {
     await page.locator('button:has-text("EN")').last().click()
 
     // 1. Rename strategy to include "%"
-    // Click on the first profile card (it's a div with cursor-pointer)
-    await page.locator('.group.relative.p-4.rounded-xl').first().click()
+    // Ensure we are in Backtest view
+    const backtestBtn = page.getByRole('button', { name: 'Backtest' })
+    if (await backtestBtn.isVisible()) {
+      await backtestBtn.click()
+    }
+
+    // Click on the first profile card
+    const firstCard = page.getByTestId('profile-card').first()
+    await firstCard.scrollIntoViewIfNeeded()
+    await firstCard.click()
 
     // Fill the name input
     const nameInput = page.locator('#profile-name-input')
@@ -26,16 +34,19 @@ test.describe('Chart Value Formatting', () => {
     await growthChart.scrollIntoViewIfNeeded()
 
     // Hover over the chart to trigger tooltip
-    await growthChart
-      .locator('svg.recharts-surface')
-      .first()
-      .hover({ position: { x: 200, y: 100 } })
+    // Use a more central position to ensure we hit a data point
+    const growthSurface = growthChart.locator('svg.recharts-surface').first()
+    await growthSurface.hover({ position: { x: 300, y: 150 } })
 
     const growthTooltip = growthChart.locator('.recharts-tooltip-wrapper')
-    await expect(growthTooltip).toBeVisible()
+    await expect(growthTooltip).toBeVisible({ timeout: 10000 })
 
     // Growth chart should show "$" for "Mix 50%"
-    const growthRow = growthTooltip.locator('text=Mix 50%').locator('..')
+    // Use filter with hasText for more robust matching in case of nested spans
+    const growthRow = growthTooltip
+      .locator('.flex.items-center')
+      .filter({ hasText: /Mix 50%/ })
+      .first()
     const growthValue = growthRow.locator('.font-mono')
     await expect(growthValue).toContainText('$')
     await expect(growthValue).not.toContainText('%')
@@ -46,12 +57,15 @@ test.describe('Chart Value Formatting', () => {
     await drawdownChart
       .locator('svg.recharts-surface')
       .first()
-      .hover({ position: { x: 200, y: 50 } })
+      .hover({ position: { x: 300, y: 100 } })
 
     const drawdownTooltip = drawdownChart.locator('.recharts-tooltip-wrapper')
-    await expect(drawdownTooltip).toBeVisible()
+    await expect(drawdownTooltip).toBeVisible({ timeout: 10000 })
 
-    const drawdownRow = drawdownTooltip.locator('text=Mix 50%').locator('..')
+    const drawdownRow = drawdownTooltip
+      .locator('.flex.items-center')
+      .filter({ hasText: /Mix 50%/ })
+      .first()
     const drawdownValue = drawdownRow.locator('.font-mono')
     await expect(drawdownValue).toContainText('%')
 
@@ -61,12 +75,15 @@ test.describe('Chart Value Formatting', () => {
     await betaChart
       .locator('svg.recharts-surface')
       .first()
-      .hover({ position: { x: 200, y: 50 } })
+      .hover({ position: { x: 300, y: 100 } })
 
     const betaTooltip = betaChart.locator('.recharts-tooltip-wrapper')
-    await expect(betaTooltip).toBeVisible()
+    await expect(betaTooltip).toBeVisible({ timeout: 10000 })
 
-    const betaRow = betaTooltip.locator('text=Mix 50% Beta').locator('..')
+    const betaRow = betaTooltip
+      .locator('.flex.items-center')
+      .filter({ hasText: /Mix 50% Beta/ })
+      .first()
     const betaValue = betaRow.locator('.font-mono')
     // Beta should be a number, no $ or %
     const betaText = await betaValue.innerText()

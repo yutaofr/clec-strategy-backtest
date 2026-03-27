@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { ConfigPanel } from './components/ConfigPanel'
 import { ResultsDashboard } from './components/ResultsDashboard'
+import { MarketMonitor } from './components/MarketMonitor'
 import { FinancialReportModal } from './components/FinancialReportModal'
 import { MARKET_DATA } from './constants'
 import { runBacktest } from './services/simulationEngine'
@@ -14,6 +15,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Activity,
+  LineChart,
 } from 'lucide-react'
 import { LanguageProvider, useTranslation, Language } from './services/i18n'
 import { version } from './package.json'
@@ -106,7 +108,7 @@ const MainApp = () => {
   })
   const [results, setResults] = useState<SimulationResult[]>([])
   const [isCalculated, setIsCalculated] = useState(false)
-  const [showQQQBenchmark, setShowQQQBenchmark] = useState<boolean>(() => {
+  const [showBenchmarks, setShowBenchmarks] = useState<boolean>(() => {
     const saved = localStorage.getItem('app_show_benchmark')
     return saved === 'true'
   })
@@ -114,6 +116,9 @@ const MainApp = () => {
 
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
+
+  // View state: 'backtest' | 'monitor'
+  const [currentView, setCurrentView] = useState<'backtest' | 'monitor'>('backtest')
 
   // Sidebar state
   const [isSidebarOpen, setSidebarOpen] = useState(() => {
@@ -157,8 +162,8 @@ const MainApp = () => {
   }, [profiles])
 
   useEffect(() => {
-    localStorage.setItem('app_show_benchmark', String(showQQQBenchmark))
-  }, [showQQQBenchmark])
+    localStorage.setItem('app_show_benchmark', String(showBenchmarks))
+  }, [showBenchmarks])
 
   useEffect(() => {
     localStorage.setItem('app_sidebar_open', String(isSidebarOpen))
@@ -187,7 +192,7 @@ const MainApp = () => {
       })
 
       // 2. Add Benchmarks (based on the first profile's capital/contribution settings)
-      if (profiles.length > 0 && showQQQBenchmark) {
+      if (profiles.length > 0 && showBenchmarks) {
         const firstProfile = profiles[0]
         if (!firstProfile) return
         const baseConfig = firstProfile.config
@@ -205,15 +210,38 @@ const MainApp = () => {
           },
         }
 
-        // Run Benchmarks (Only QQQ)
+        // Benchmark: QLD (2x Leveraged Nasdaq 100)
+        const qldConfig: AssetConfig = {
+          ...baseConfig,
+          qqqWeight: 0,
+          qldWeight: 100,
+          contributionQqqWeight: 0,
+          contributionQldWeight: 100,
+          leverage: {
+            ...baseConfig.leverage,
+            enabled: false, // Benchmarks are unleveraged
+          },
+        }
+
+        // Run Benchmarks (QQQ & QLD)
         newResults.push(
           runBacktest(
             MARKET_DATA,
             getStrategyByType('NO_REBALANCE'),
             qqqConfig,
             'Benchmark: QQQ',
-            '#64748b',
-          ), // Slate-500
+            '#64748b', // Slate-500
+          ),
+        )
+
+        newResults.push(
+          runBacktest(
+            MARKET_DATA,
+            getStrategyByType('NO_REBALANCE'),
+            qldConfig,
+            'Benchmark: QLD',
+            '#94a3b8', // Slate-400
+          ),
         )
       }
 
@@ -226,7 +254,7 @@ const MainApp = () => {
         setSidebarOpen(false)
       }
     }, 100) // Small delay to yield to UI thread
-  }, [profiles, showQQQBenchmark])
+  }, [profiles, showBenchmarks])
 
   useEffect(() => {
     handleRunSimulation()
@@ -365,6 +393,31 @@ const MainApp = () => {
             <LangButton code="zh-CN" label="简体中文" />
             <LangButton code="zh-TW" label="繁體中文" />
           </div>
+
+          <div className="flex bg-slate-200/50 p-1 rounded-xl gap-1">
+            <button
+              onClick={() => setCurrentView('backtest')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                currentView === 'backtest'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <LineChart className="w-4 h-4" />
+              {t('backtestView')}
+            </button>
+            <button
+              onClick={() => setCurrentView('monitor')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                currentView === 'monitor'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              {t('liveMonitor')}
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content */}
@@ -377,8 +430,8 @@ const MainApp = () => {
               onRun={handleRunSimulation}
               onViewDetails={handleViewDetails}
               hasResults={isCalculated}
-              showBenchmark={showQQQBenchmark}
-              onShowBenchmarkChange={setShowQQQBenchmark}
+              showBenchmark={showBenchmarks}
+              onShowBenchmarkChange={setShowBenchmarks}
             />
 
             <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">
@@ -407,7 +460,11 @@ const MainApp = () => {
           </button>
         </div>
 
-        {isCalculated && results.length > 0 ? (
+        {currentView === 'monitor' ? (
+          <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
+            <MarketMonitor />
+          </div>
+        ) : isCalculated && results.length > 0 ? (
           <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
             <div className="mb-6 hidden lg:block">
               <h2 className="text-2xl font-bold text-slate-800">{t('simulationResults')}</h2>

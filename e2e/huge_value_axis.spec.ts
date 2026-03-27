@@ -6,24 +6,26 @@ test.describe('Charts Y-Axis Clean Ticks Verification', () => {
   }) => {
     await page.goto('/')
 
+    // Switch to English to ensure consistent selectors
+    await page.locator('button:has-text("EN")').last().click()
+
     // 1. Click the first profile card to edit
-    await page.locator('.group.relative.p-4.rounded-xl.border').first().click()
+    await page.getByTestId('profile-card').first().click()
 
     // 2. Set Initial Capital to 100,000,000
-    const capInput = page.locator('input[type="number"]').first()
+    // 2. Set Initial Capital to 100,000,000 using the new ID
+    const capInput = page.locator('#initial-capital-input')
     await capInput.fill('100000000')
 
-    // 3. Enable Leverage
+    // 3. Enable Leverage (Asset Pledge)
+    // The first checkbox in standard view is the Asset Pledge toggle
     const leverageCheck = page.locator('input[type="checkbox"]').first()
     if (!(await leverageCheck.isChecked())) {
       await leverageCheck.check({ force: true })
     }
 
     // 4. Click Done
-    const doneS = 'button:has-text("Done"), button:has-text("完成"), button:has-text("Terminé")'
-    const doneBtn = page.locator(doneS).filter({ visible: true }).first()
-    await doneBtn.scrollIntoViewIfNeeded()
-    await doneBtn.click()
+    await page.locator('button:has-text("Done")').last().click()
 
     // 5. Run Comparison
     const runS =
