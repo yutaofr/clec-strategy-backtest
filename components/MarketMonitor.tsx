@@ -1,13 +1,27 @@
-import React, { useState } from 'react'
-import { RefreshCw, AlertCircle, Maximize2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { RefreshCw, AlertCircle, Maximize2, X } from 'lucide-react'
 import { useTranslation } from '../services/i18n'
 
 export const MarketMonitor: React.FC = () => {
   const { t, language } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
+  const [showWarning, setShowWarning] = useState(true)
   const [key, setKey] = useState(0) // Used to force iframe reload
 
   const MONITOR_URL = 'https://qqq-buyer-monitor.vercel.app/'
+
+  // Load warning visibility from localStorage
+  useEffect(() => {
+    const hidden = localStorage.getItem('hide_monitor_warning') === 'true'
+    if (hidden) {
+      setShowWarning(false)
+    }
+  }, [])
+
+  const handleDismissWarning = () => {
+    setShowWarning(false)
+    localStorage.setItem('hide_monitor_warning', 'true')
+  }
 
   const handleRefresh = () => {
     setIsLoading(true)
@@ -49,36 +63,45 @@ export const MarketMonitor: React.FC = () => {
       </div>
 
       {/* Experimental / Disclaimer Banner */}
-      <div className="bg-amber-50 border-b border-amber-200 px-4 py-4 flex items-start gap-3">
-        <AlertCircle className="w-6 h-6 text-amber-600 mt-0.5 flex-shrink-0" />
-        <div className="text-amber-900 text-sm leading-relaxed">
-          <div className="font-black text-xs uppercase tracking-widest text-amber-700 mb-1">
-            EXPERIMENTAL / DISCLAIMER
+      {showWarning && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-4 flex items-start gap-3 relative group">
+          <AlertCircle className="w-6 h-6 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="text-amber-900 text-sm leading-relaxed pr-8">
+            <div className="font-black text-xs uppercase tracking-widest text-amber-700 mb-1">
+              EXPERIMENTAL / DISCLAIMER
+            </div>
+            {language === 'zh-CN' || language === 'zh-TW' ? (
+              <>
+                <p className="font-bold underline decoration-amber-300 decoration-2 underline-offset-2">
+                  【实验性质声明】此功能属于开发者个人的学习与研究，并非成熟的金融产品。
+                </p>
+                <p className="mt-2 font-bold text-amber-800">
+                  ⚠️ 请注意，本功能与 CLEC (Nasdaq-100/QQQ Strategy)
+                  项目本身并无任何关联。不推荐将其作为投资建议，请勿依赖此数据辅助真实的投资决策。
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-bold underline decoration-amber-300 decoration-2 underline-offset-2">
+                  [Experimental Disclaimer] This feature is for developer's personal learning and
+                  research only.
+                </p>
+                <p className="mt-2 font-bold text-amber-800">
+                  ⚠️ This feature is NOT affiliated with the core CLEC project. It is NOT
+                  recommended to treat this as investment advice. Use at your own risk.
+                </p>
+              </>
+            )}
           </div>
-          {language === 'zh-CN' || language === 'zh-TW' ? (
-            <>
-              <p className="font-bold underline decoration-amber-300 decoration-2 underline-offset-2">
-                【实验性质声明】此功能属于开发者个人的学习与研究，并非成熟的金融产品。
-              </p>
-              <p className="mt-2 font-bold text-amber-800">
-                ⚠️ 请注意，本功能与 CLEC (Nasdaq-100/QQQ Strategy)
-                项目本身并无任何关联。不推荐将其作为投资建议，请勿依赖此数据辅助真实的投资决策。
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-bold underline decoration-amber-300 decoration-2 underline-offset-2">
-                [Experimental Disclaimer] This feature is for developer's personal learning and
-                research only.
-              </p>
-              <p className="mt-2 font-bold text-amber-800">
-                ⚠️ This feature is NOT affiliated with the core CLEC project. It is NOT recommended
-                to treat this as investment advice. Use at your own risk.
-              </p>
-            </>
-          )}
+          <button
+            onClick={handleDismissWarning}
+            className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-amber-100 text-amber-400 hover:text-amber-600 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+            title="Dismiss Warning"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      </div>
+      )}
 
       {/* Main Content (Iframe) */}
       <div className="relative flex-1 w-full bg-[#0a0a0a]">

@@ -25,7 +25,7 @@ jobs:
           VERSION_TAG=${{ github.ref }}
           VERSION=${VERSION_TAG##*/v}
           echo "Bumping version to $VERSION"
-          
+
           # Use pre-installed node/npm on ubuntu-latest
           npm version $VERSION --no-git-tag-version
 
