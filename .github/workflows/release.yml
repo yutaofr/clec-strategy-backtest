@@ -10,32 +10,36 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Get version from tag
-        id: get_version
+      - name: Manual Checkout
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Extract version from tag (e.g., v1.2.3 -> 1.2.3)
-          VERSION=${GITHUB_REF#refs/tags/}
-          VERSION=${VERSION#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          git init
+          git remote add origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+          git fetch --depth=1 origin ${{ github.ref }}
+          git checkout FETCH_HEAD
 
       - name: Update package.json version
         run: |
-          npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version
+          # Extract version from tag (e.g., refs/tags/v1.2.0 -> 1.2.0)
+          VERSION_TAG=${{ github.ref }}
+          VERSION=${VERSION_TAG##*/v}
+          echo "Bumping version to $VERSION"
+          
+          # Use pre-installed node/npm on ubuntu-latest
+          npm version $VERSION --no-git-tag-version
 
       - name: Commit and Push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }} [skip ci]"
-          git push
+          git add package.json
+          # Check if there are changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: bump version to $VERSION [skip ci]"
+            git push origin HEAD:main
+          fi
