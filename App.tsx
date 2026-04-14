@@ -15,7 +15,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Activity,
-  LineChart,
+  // LineChart,
 } from 'lucide-react'
 import { LanguageProvider, useTranslation, Language } from './services/i18n'
 import { version } from './package.json'
@@ -118,7 +118,7 @@ const MainApp = () => {
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
 
   // View state: 'backtest' | 'monitor'
-  const [currentView, setCurrentView] = useState<'backtest' | 'monitor'>('backtest')
+  const [currentView /*, setCurrentView */] = useState<'backtest' | 'monitor'>('backtest')
 
   // Sidebar state
   const [isSidebarOpen, setSidebarOpen] = useState(() => {
@@ -394,7 +394,8 @@ const MainApp = () => {
             <LangButton code="zh-TW" label="繁體中文" />
           </div>
 
-          <div className="flex bg-slate-200/50 p-1 rounded-xl gap-1">
+          {/* Temporarily disabling the view switcher to hide "Market Barometer" */}
+          {/* <div className="flex bg-slate-200/50 p-1 rounded-xl gap-1">
             <button
               onClick={() => setCurrentView('backtest')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
@@ -417,7 +418,7 @@ const MainApp = () => {
               <Activity className="w-4 h-4" />
               {t('liveMonitor')}
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Scrollable Content */}
