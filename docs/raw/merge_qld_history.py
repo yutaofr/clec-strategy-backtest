@@ -68,9 +68,10 @@ def main():
     # Sort by month
     sorted_history = sorted(history.values(), key=lambda x: x['month'])
 
-    # Save back to JSON
+    # Save back to JSON (trailing newline keeps prettier happy)
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(sorted_history, f, indent=2, ensure_ascii=False)
+        f.write('\n')
 
     print(f"Total months in updated JSON: {len(sorted_history)}")
     print(f"Updated {json_file} successfully.")
