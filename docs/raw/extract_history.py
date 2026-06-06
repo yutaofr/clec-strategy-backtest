@@ -101,6 +101,7 @@ def process_history(input_file, output_file):
     
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
+        f.write('\n')
 
     print(f"Successfully processed {len(results)} months of data from {input_file}.")
     print(f"Result saved to {output_file}")

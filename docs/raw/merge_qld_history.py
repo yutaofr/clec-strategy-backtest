@@ -24,7 +24,14 @@ def main():
     new_entries = {}
     date_range_start = "2000-03-01"
     date_range_end = "2006-06-01"
-    
+
+    # The pre-inception backfill in qld-deducted.csv is a synthetic 2x-QQQ series
+    # whose basis is missing one of QLD's later 2:1 forward splits, so it sits at
+    # exactly 2x the scale of the real (split-adjusted) prices that start 2006-07.
+    # Divide by the split factor so the backfill joins the real series continuously
+    # (without this, 2006-06 -> 2006-07 shows an artificial ~-54% cliff). See issue #28.
+    SPLIT_FACTOR = 2.0
+
     with open(csv_file, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
@@ -41,10 +48,10 @@ def main():
                     # Parts should be: Date, Low, Close
                     if len(parts) >= 3:
                         dt = parts[0]
-                        low = float(parts[1])
-                        close = float(parts[2])
+                        low = float(parts[1]) / SPLIT_FACTOR
+                        close = float(parts[2]) / SPLIT_FACTOR
                         month = dt[:7]
-                        
+
                         # Use the same key format as in the existing JSON
                         new_entries[month] = {
                             "month": month,
@@ -61,9 +68,10 @@ def main():
     # Sort by month
     sorted_history = sorted(history.values(), key=lambda x: x['month'])
 
-    # Save back to JSON
+    # Save back to JSON (trailing newline keeps prettier happy)
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(sorted_history, f, indent=2, ensure_ascii=False)
+        f.write('\n')
 
     print(f"Total months in updated JSON: {len(sorted_history)}")
     print(f"Updated {json_file} successfully.")
