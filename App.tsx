@@ -7,7 +7,12 @@ import { FinancialReportModal } from './components/FinancialReportModal'
 import { MARKET_DATA } from './constants'
 import { runBacktest } from './services/simulationEngine'
 import { getStrategyByType } from './services/strategies'
-import { filterMarketDataByMonthWindow, toMonthKey } from './services/marketDataWindow'
+import {
+  BacktestWindowState,
+  filterMarketDataByMonthWindow,
+  resolveBacktestWindow,
+  toMonthKey,
+} from './services/marketDataWindow'
 import { AssetConfig, Profile, SimulationResult } from './types'
 import {
   LayoutDashboard,
@@ -96,23 +101,26 @@ const INITIAL_PROFILES: Profile[] = [
 
 const MIN_MARKET_MONTH = toMonthKey(MARKET_DATA[0].date)
 const MAX_MARKET_MONTH = toMonthKey(MARKET_DATA[MARKET_DATA.length - 1].date)
+const BACKTEST_START_MONTH_KEY = 'app_backtest_start_month'
+const BACKTEST_END_MONTH_KEY = 'app_backtest_end_month'
+const BACKTEST_WINDOW_CUSTOM_KEY = 'app_backtest_window_custom'
 
-const getStoredBacktestMonth = (key: string, fallback: string): string => {
+const getStoredBacktestMonth = (key: string): string | null => {
   const saved = localStorage.getItem(key)
-  if (!saved) return fallback
-  if (saved < MIN_MARKET_MONTH || saved > MAX_MARKET_MONTH) return fallback
+  if (!saved) return null
+  if (saved < MIN_MARKET_MONTH || saved > MAX_MARKET_MONTH) return null
   return saved
 }
 
-const getInitialBacktestWindow = (): { startMonth: string; endMonth: string } => {
-  const startMonth = getStoredBacktestMonth('app_backtest_start_month', MIN_MARKET_MONTH)
-  const endMonth = getStoredBacktestMonth('app_backtest_end_month', MAX_MARKET_MONTH)
-
-  if (startMonth > endMonth) {
-    return { startMonth: MIN_MARKET_MONTH, endMonth: MAX_MARKET_MONTH }
-  }
-
-  return { startMonth, endMonth }
+const getInitialBacktestWindow = (): BacktestWindowState => {
+  return resolveBacktestWindow({
+    savedStartMonth: getStoredBacktestMonth(BACKTEST_START_MONTH_KEY),
+    savedEndMonth: getStoredBacktestMonth(BACKTEST_END_MONTH_KEY),
+    hasExplicitWindow: localStorage.getItem(BACKTEST_WINDOW_CUSTOM_KEY) === 'true',
+    savedLastMarketDate: localStorage.getItem('app_last_market_date'),
+    minMarketMonth: MIN_MARKET_MONTH,
+    maxMarketMonth: MAX_MARKET_MONTH,
+  })
 }
 
 const MainApp = () => {
@@ -199,12 +207,16 @@ const MainApp = () => {
   }, [showBenchmarks])
 
   useEffect(() => {
-    localStorage.setItem('app_backtest_start_month', backtestWindow.startMonth)
-  }, [backtestWindow.startMonth])
-
-  useEffect(() => {
-    localStorage.setItem('app_backtest_end_month', backtestWindow.endMonth)
-  }, [backtestWindow.endMonth])
+    if (backtestWindow.isCustom) {
+      localStorage.setItem(BACKTEST_START_MONTH_KEY, backtestWindow.startMonth)
+      localStorage.setItem(BACKTEST_END_MONTH_KEY, backtestWindow.endMonth)
+      localStorage.setItem(BACKTEST_WINDOW_CUSTOM_KEY, 'true')
+    } else {
+      localStorage.removeItem(BACKTEST_START_MONTH_KEY)
+      localStorage.removeItem(BACKTEST_END_MONTH_KEY)
+      localStorage.removeItem(BACKTEST_WINDOW_CUSTOM_KEY)
+    }
+  }, [backtestWindow])
 
   useEffect(() => {
     localStorage.setItem('app_sidebar_open', String(isSidebarOpen))
@@ -490,7 +502,7 @@ const MainApp = () => {
               minBacktestMonth={MIN_MARKET_MONTH}
               maxBacktestMonth={MAX_MARKET_MONTH}
               onBacktestWindowChange={(startMonth, endMonth) => {
-                setBacktestWindow({ startMonth, endMonth })
+                setBacktestWindow({ startMonth, endMonth, isCustom: true })
                 setIsCalculated(false)
               }}
             />
