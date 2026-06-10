@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { ConfigPanel } from './components/ConfigPanel'
 import { ResultsDashboard } from './components/ResultsDashboard'
@@ -7,6 +7,12 @@ import { FinancialReportModal } from './components/FinancialReportModal'
 import { MARKET_DATA } from './constants'
 import { runBacktest } from './services/simulationEngine'
 import { getStrategyByType } from './services/strategies'
+import {
+  BacktestWindowState,
+  filterMarketDataByMonthWindow,
+  resolveBacktestWindow,
+  toMonthKey,
+} from './services/marketDataWindow'
 import { AssetConfig, Profile, SimulationResult } from './types'
 import {
   LayoutDashboard,
@@ -93,6 +99,30 @@ const INITIAL_PROFILES: Profile[] = [
   },
 ]
 
+const MIN_MARKET_MONTH = toMonthKey(MARKET_DATA[0].date)
+const MAX_MARKET_MONTH = toMonthKey(MARKET_DATA[MARKET_DATA.length - 1].date)
+const BACKTEST_START_MONTH_KEY = 'app_backtest_start_month'
+const BACKTEST_END_MONTH_KEY = 'app_backtest_end_month'
+const BACKTEST_WINDOW_CUSTOM_KEY = 'app_backtest_window_custom'
+
+const getStoredBacktestMonth = (key: string): string | null => {
+  const saved = localStorage.getItem(key)
+  if (!saved) return null
+  if (saved < MIN_MARKET_MONTH || saved > MAX_MARKET_MONTH) return null
+  return saved
+}
+
+const getInitialBacktestWindow = (): BacktestWindowState => {
+  return resolveBacktestWindow({
+    savedStartMonth: getStoredBacktestMonth(BACKTEST_START_MONTH_KEY),
+    savedEndMonth: getStoredBacktestMonth(BACKTEST_END_MONTH_KEY),
+    hasExplicitWindow: localStorage.getItem(BACKTEST_WINDOW_CUSTOM_KEY) === 'true',
+    savedLastMarketDate: localStorage.getItem('app_last_market_date'),
+    minMarketMonth: MIN_MARKET_MONTH,
+    maxMarketMonth: MAX_MARKET_MONTH,
+  })
+}
+
 const MainApp = () => {
   const { t, language, setLanguage } = useTranslation()
   const [profiles, setProfiles] = useState<Profile[]>(() => {
@@ -113,6 +143,17 @@ const MainApp = () => {
     return saved === 'true'
   })
   const [isCalculating, setIsCalculating] = useState(false)
+  const [backtestWindow, setBacktestWindow] = useState(getInitialBacktestWindow)
+
+  const selectedMarketData = useMemo(
+    () =>
+      filterMarketDataByMonthWindow(
+        MARKET_DATA,
+        backtestWindow.startMonth,
+        backtestWindow.endMonth,
+      ),
+    [backtestWindow],
+  )
 
   // Reporting Modal State
   const [reportResult, setReportResult] = useState<SimulationResult | null>(null)
@@ -166,6 +207,18 @@ const MainApp = () => {
   }, [showBenchmarks])
 
   useEffect(() => {
+    if (backtestWindow.isCustom) {
+      localStorage.setItem(BACKTEST_START_MONTH_KEY, backtestWindow.startMonth)
+      localStorage.setItem(BACKTEST_END_MONTH_KEY, backtestWindow.endMonth)
+      localStorage.setItem(BACKTEST_WINDOW_CUSTOM_KEY, 'true')
+    } else {
+      localStorage.removeItem(BACKTEST_START_MONTH_KEY)
+      localStorage.removeItem(BACKTEST_END_MONTH_KEY)
+      localStorage.removeItem(BACKTEST_WINDOW_CUSTOM_KEY)
+    }
+  }, [backtestWindow])
+
+  useEffect(() => {
     localStorage.setItem('app_sidebar_open', String(isSidebarOpen))
   }, [isSidebarOpen])
 
@@ -177,17 +230,29 @@ const MainApp = () => {
   }, [profiles])
 
   const handleRunSimulation = useCallback(() => {
+    if (selectedMarketData.length === 0) {
+      setResults([])
+      setIsCalculated(false)
+      return
+    }
+
     setIsCalculating(true)
 
     // Using setTimeout to allow UI to render the "Calculating" state before heavy CPU task
     setTimeout(() => {
-      const newResults = []
+      const newResults: SimulationResult[] = []
 
       // 1. Run Strategy Backtests
       profiles.forEach((profile) => {
         const strategyFunc = getStrategyByType(profile.strategyType)
         newResults.push(
-          runBacktest(MARKET_DATA, strategyFunc, profile.config, profile.name, profile.color),
+          runBacktest(
+            selectedMarketData,
+            strategyFunc,
+            profile.config,
+            profile.name,
+            profile.color,
+          ),
         )
       })
 
@@ -226,7 +291,7 @@ const MainApp = () => {
         // Run Benchmarks (QQQ & QLD)
         newResults.push(
           runBacktest(
-            MARKET_DATA,
+            selectedMarketData,
             getStrategyByType('NO_REBALANCE'),
             qqqConfig,
             'Benchmark: QQQ',
@@ -236,7 +301,7 @@ const MainApp = () => {
 
         newResults.push(
           runBacktest(
-            MARKET_DATA,
+            selectedMarketData,
             getStrategyByType('NO_REBALANCE'),
             qldConfig,
             'Benchmark: QLD',
@@ -254,7 +319,7 @@ const MainApp = () => {
         setSidebarOpen(false)
       }
     }, 100) // Small delay to yield to UI thread
-  }, [profiles, showBenchmarks])
+  }, [profiles, selectedMarketData, showBenchmarks])
 
   useEffect(() => {
     handleRunSimulation()
@@ -433,12 +498,19 @@ const MainApp = () => {
               hasResults={isCalculated}
               showBenchmark={showBenchmarks}
               onShowBenchmarkChange={setShowBenchmarks}
+              backtestStartMonth={backtestWindow.startMonth}
+              backtestEndMonth={backtestWindow.endMonth}
+              minBacktestMonth={MIN_MARKET_MONTH}
+              maxBacktestMonth={MAX_MARKET_MONTH}
+              onBacktestWindowChange={(startMonth, endMonth) => {
+                setBacktestWindow({ startMonth, endMonth, isCustom: true })
+                setIsCalculated(false)
+              }}
             />
 
             <div className="mt-8 px-2 text-xs text-slate-400 leading-relaxed hidden lg:block">
               <p>
-                {t('dataRange')}: {MARKET_DATA[0].date.substring(0, 4)} -{' '}
-                {MARKET_DATA[MARKET_DATA.length - 1].date.substring(0, 4)}
+                {t('dataRange')}: {MIN_MARKET_MONTH} - {MAX_MARKET_MONTH}
               </p>
               <p className="mt-2">{t('appDesc')}</p>
             </div>
